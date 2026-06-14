@@ -1,0 +1,160 @@
+{
+  "name": "sub2api-usage-monitor",
+  "displayName": "Sub2api Usage Monitor",
+  "description": "Show Sub2api relay API usage and quota information in the VS Code status bar.",
+  "version": "0.1.0",
+  "publisher": "esing",
+  "author": "Esing",
+  "license": "MIT",
+  "icon": "assets/logo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zxis233/vscode-sub2api-usage-monitor.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:sub2apiUsage.refresh",
+    "onCommand:sub2apiUsage.setApiKey",
+    "onCommand:sub2apiUsage.clearApiKey",
+    "onCommand:sub2apiUsage.showDetails",
+    "onCommand:sub2apiUsage.openSettings"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sub2apiUsage.refresh",
+        "title": "Sub2api Usage: Refresh"
+      },
+      {
+        "command": "sub2apiUsage.setApiKey",
+        "title": "Sub2api Usage: Set API Key"
+      },
+      {
+        "command": "sub2apiUsage.clearApiKey",
+        "title": "Sub2api Usage: Clear API Key"
+      },
+      {
+        "command": "sub2apiUsage.showDetails",
+        "title": "Sub2api Usage: Show Details"
+      },
+      {
+        "command": "sub2apiUsage.openSettings",
+        "title": "Sub2api Usage: Open Settings"
+      }
+    ],
+    "configuration": {
+      "title": "Sub2api Usage Monitor",
+      "properties": {
+        "sub2apiUsage.endpoint": {
+          "type": "string",
+          "default": "https://api.your.sub2api.com/v1/usage",
+          "description": "Usage query endpoint."
+        },
+        "sub2apiUsage.apiKey": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "markdownDescription": "Bearer Token. Prefer `Sub2api Usage: Set API Key`, which stores the token in VS Code SecretStorage."
+        },
+        "sub2apiUsage.pollIntervalSeconds": {
+          "type": "number",
+          "default": 300,
+          "minimum": 30,
+          "description": "Polling interval in seconds."
+        },
+        "sub2apiUsage.displayMode": {
+          "type": "string",
+          "enum": [
+            "percentage",
+            "quota",
+            "remaining",
+            "compact"
+          ],
+          "default": "percentage",
+          "description": "Status bar display mode."
+        },
+        "sub2apiUsage.currencySymbol": {
+          "type": "string",
+          "default": "$",
+          "description": "Currency prefix for quota values."
+        },
+        "sub2apiUsage.decimals": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 6,
+          "description": "Decimal places for money and percentage values."
+        },
+        "sub2apiUsage.show5h": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 5h rate limit when available."
+        },
+        "sub2apiUsage.show7d": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 7d rate limit when available."
+        },
+        "sub2apiUsage.placeholderText": {
+          "type": "string",
+          "default": "Sub2api Usage",
+          "description": "Status bar text shown when both 5h and 7d rate limit displays are disabled."
+        },
+        "sub2apiUsage.statusBarAlignment": {
+          "type": "string",
+          "enum": [
+            "left",
+            "right"
+          ],
+          "default": "right",
+          "description": "Status bar alignment."
+        },
+        "sub2apiUsage.statusBarPriority": {
+          "type": "number",
+          "default": 100,
+          "description": "Status bar priority."
+        },
+        "sub2apiUsage.warnThresholdPercent": {
+          "type": "number",
+          "default": 80,
+          "description": "Use warning icon when usage reaches this percentage."
+        },
+        "sub2apiUsage.dangerThresholdPercent": {
+          "type": "number",
+          "default": 95,
+          "description": "Use error icon when usage reaches this percentage."
+        },
+        "sub2apiUsage.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start polling automatically after VS Code starts."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.6.0",
+    "eslint": "^9.29.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1",
+    "vitest": "^3.2.4"
+  }
+}
