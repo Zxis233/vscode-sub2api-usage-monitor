@@ -74,6 +74,11 @@ class UsageController implements vscode.Disposable {
   }
 
   private async renderInitialState(): Promise<void> {
+    if (!this.config.endpoint) {
+      this.statusBar.showMissingEndpoint();
+      return;
+    }
+
     const apiKey = await this.resolveApiKey();
     if (!apiKey) {
       this.statusBar.showUnconfigured();
@@ -96,12 +101,19 @@ class UsageController implements vscode.Disposable {
   }
 
   private async doRefresh(): Promise<RefreshResult> {
+    if (!this.config.endpoint) {
+      this.lastResponse = undefined;
+      this.lastError = undefined;
+      this.statusBar.showMissingEndpoint();
+      return "missingEndpoint";
+    }
+
     const apiKey = await this.resolveApiKey();
     if (!apiKey) {
       this.lastResponse = undefined;
       this.lastError = undefined;
       this.statusBar.showUnconfigured();
-      return "unconfigured";
+      return "missingApiKey";
     }
 
     this.statusBar.showLoading();
@@ -125,11 +137,7 @@ class UsageController implements vscode.Disposable {
 
   private async resolveApiKey(): Promise<string | undefined> {
     const secretApiKey = (await this.context.secrets.get(SECRET_API_KEY))?.trim();
-    if (secretApiKey) {
-      return secretApiKey;
-    }
-
-    return this.config.apiKey || undefined;
+    return secretApiKey || undefined;
   }
 
   private handleConfigChanged(): void {
@@ -137,7 +145,10 @@ class UsageController implements vscode.Disposable {
     this.statusBar.updateConfig(this.config);
     this.renderLastState();
     this.restartPollTimer();
-    void this.refresh();
+
+    if (this.config.autoStart) {
+      void this.refresh();
+    }
   }
 
   private renderLastState(): void {

@@ -7,6 +7,7 @@ dist/test/**
 **/*.map
 *.ts
 tsconfig.json
+tsconfig.build.json
 eslint.config.js
 vitest.config.ts
 Instruction.md

@@ -10,8 +10,7 @@ import {
 import type { UsageResponse } from "../types";
 
 const baseConfig: ExtensionConfig = {
-  endpoint: "https://api.your.sub2api.com/v1/usage",
-  apiKey: "",
+  endpoint: "https://your-sub2api.example.com/v1/usage",
   pollIntervalSeconds: 300,
   displayMode: "percentage",
   currencySymbol: "$",

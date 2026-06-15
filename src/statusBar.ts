@@ -33,6 +33,12 @@ export class UsageStatusBar implements vscode.Disposable {
     this.item.show();
   }
 
+  public showMissingEndpoint(): void {
+    this.item.text = "$(gear) Sub2api Usage: Set endpoint";
+    this.item.tooltip = "No usage endpoint configured. Open Sub2api Usage Monitor settings to set sub2apiUsage.endpoint.";
+    this.item.show();
+  }
+
   public showIdle(): void {
     this.item.text = "$(pulse) Sub2api Usage: Ready";
     this.item.tooltip = "Sub2api Usage Monitor is ready. Run Sub2api Usage: Refresh to query usage.";

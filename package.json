@@ -2,8 +2,8 @@
   "name": "sub2api-usage-monitor",
   "displayName": "Sub2api Usage Monitor",
   "description": "Show Sub2api relay API usage and quota information in the VS Code status bar.",
-  "version": "0.1.0",
-  "publisher": "esing",
+  "version": "0.2.0",
+  "publisher": "Esing",
   "author": "Esing",
   "license": "MIT",
   "icon": "assets/logo.png",
@@ -14,9 +14,28 @@
   "engines": {
     "vscode": "^1.90.0"
   },
+  "extensionKind": [
+    "ui"
+  ],
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "sub2api",
+    "usage",
+    "quota",
+    "api",
+    "statusbar",
+    "monitor",
+    "relay",
+    "token"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
   "activationEvents": [
     "onStartupFinished",
     "onCommand:sub2apiUsage.refresh",
@@ -54,19 +73,15 @@
       "properties": {
         "sub2apiUsage.endpoint": {
           "type": "string",
-          "default": "https://api.your.sub2api.com/v1/usage",
-          "description": "Usage query endpoint."
-        },
-        "sub2apiUsage.apiKey": {
-          "type": "string",
           "default": "",
-          "scope": "machine-overridable",
-          "markdownDescription": "Bearer Token. Prefer `Sub2api Usage: Set API Key`, which stores the token in VS Code SecretStorage."
+          "scope": "machine",
+          "markdownDescription": "Usage query endpoint. Configure this in user settings. The extension sends tokens only to HTTPS endpoints, except localhost testing."
         },
         "sub2apiUsage.pollIntervalSeconds": {
           "type": "number",
           "default": 300,
           "minimum": 30,
+          "maximum": 86400,
           "description": "Polling interval in seconds."
         },
         "sub2apiUsage.displayMode": {
@@ -140,9 +155,10 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "vscode:prepublish": "npm run verify",
+    "compile": "tsc -p ./tsconfig.build.json",
     "watch": "tsc -watch -p ./",
+    "verify": "npm run compile && npm run lint && npm test",
     "lint": "eslint .",
     "test": "vitest run",
     "package": "vsce package"
@@ -155,6 +171,6 @@
     "eslint": "^9.29.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.34.1",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.8"
   }
 }

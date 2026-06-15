@@ -9,7 +9,6 @@ export type StatusBarSide = "left" | "right";
 
 export interface ExtensionConfig {
   endpoint: string;
-  apiKey: string;
   pollIntervalSeconds: number;
   displayMode: DisplayMode;
   currencySymbol: string;
@@ -24,17 +23,22 @@ export interface ExtensionConfig {
   autoStart: boolean;
 }
 
-const DEFAULT_ENDPOINT = "https://api.your.sub2api.com/v1/usage";
+const DEFAULT_ENDPOINT = "";
+const MIN_POLL_INTERVAL_SECONDS = 30;
+const MAX_POLL_INTERVAL_SECONDS = 86_400;
 
 export function getExtensionConfig(): ExtensionConfig {
   const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
 
   const decimals = clampNumber(config.get<number>("decimals", 2), 0, 6);
-  const pollIntervalSeconds = Math.max(config.get<number>("pollIntervalSeconds", 300), 30);
+  const pollIntervalSeconds = clampNumber(
+    config.get<number>("pollIntervalSeconds", 300),
+    MIN_POLL_INTERVAL_SECONDS,
+    MAX_POLL_INTERVAL_SECONDS
+  );
 
   return {
-    endpoint: config.get<string>("endpoint", DEFAULT_ENDPOINT).trim() || DEFAULT_ENDPOINT,
-    apiKey: config.get<string>("apiKey", "").trim(),
+    endpoint: normalizeEndpoint(getGlobalSetting(config, "endpoint", DEFAULT_ENDPOINT)),
     pollIntervalSeconds,
     displayMode: normalizeDisplayMode(config.get<string>("displayMode", "percentage")),
     currencySymbol: config.get<string>("currencySymbol", "$"),
@@ -72,4 +76,13 @@ function normalizeStatusBarAlignment(value: string): StatusBarSide {
 
 function normalizePlaceholderText(value: string): string {
   return value.trim() || "Sub2api Usage";
+}
+
+function normalizeEndpoint(value: string): string {
+  return value.trim();
+}
+
+function getGlobalSetting<T>(config: vscode.WorkspaceConfiguration, key: string, fallback: T): T {
+  const inspected = config.inspect<T>(key);
+  return inspected?.globalValue ?? inspected?.defaultValue ?? fallback;
 }

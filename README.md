@@ -1,8 +1,8 @@
 # Sub2api Usage Monitor
 
-![Sub2api Usage Monitor logo](assets/logo.png)
-
-Author: Esing
+<div align="center">
+  <img height="160px" src="assets/logo.png" style="max-width: 100%; height: auto; max-height: 160px;">
+</div>
 
 Sub2api Usage Monitor is a VS Code extension that shows Sub2api relay API usage in the bottom status bar.
 
@@ -11,40 +11,39 @@ Examples:
 - `$(pulse) Sub2api 5h 13.17% | 7d 2.20%`
 - `$(pulse) Sub2api 5h $3.95/$30.00 | 7d $3.95/$180.00`
 - `$(pulse) Sub2api 5h $176.05 left | 7d $176.05 left`
+- `$(gear) Sub2api Usage: Set endpoint`
 - `$(key) Sub2api Usage: Set token`
 
-## Install Dependencies
+## First Use
 
-```bash
-npm install
+1. Open VS Code user settings.
+2. Set `sub2apiUsage.endpoint` to your Sub2api usage endpoint.
+3. Run `Sub2api Usage: Set API Key`.
+4. Paste the Bearer token. The input is password masked.
+5. Run `Sub2api Usage: Refresh`, or leave `sub2apiUsage.autoStart` enabled.
+
+Example `settings.json`:
+
+```json
+{
+  "sub2apiUsage.endpoint": "https://your-sub2api.example.com/v1/usage"
+}
 ```
 
-## Run Locally
+## Configure Endpoint and Token
 
-1. Run `npm install`.
-2. Run `npm run compile`.
-3. Open this folder in VS Code.
-4. Press `F5` and choose `Run Extension`.
-5. In the Extension Development Host, run `Sub2api Usage: Set API Key`.
+Endpoint:
 
-## Configure Token
+- `sub2apiUsage.endpoint` is empty by default and must be configured before refresh.
+- Configure it in VS Code user settings, not workspace settings.
+- HTTPS is required, except for localhost testing.
 
-Recommended:
+Token:
 
 1. Open Command Palette.
 2. Run `Sub2api Usage: Set API Key`.
 3. Paste the Bearer token. The input is password masked.
-4. The token is stored in VS Code SecretStorage under `sub2apiUsage.apiKey`.
-
-Fallback:
-
-Set `sub2apiUsage.apiKey` in VS Code settings. SecretStorage takes priority over this setting.
-
-Token priority:
-
-1. VS Code SecretStorage
-2. `sub2apiUsage.apiKey`
-3. Unconfigured state
+4. The token is stored in VS Code SecretStorage.
 
 ## Commands
 
@@ -56,9 +55,8 @@ Token priority:
 
 ## Settings
 
-- `sub2apiUsage.endpoint`: usage endpoint. Default `https://api.your.sub2api.com/v1/usage`.
-- `sub2apiUsage.apiKey`: fallback Bearer Token. Prefer SecretStorage.
-- `sub2apiUsage.pollIntervalSeconds`: polling interval in seconds. Minimum `30`.
+- `sub2apiUsage.endpoint`: usage endpoint. Empty by default and read from user settings only.
+- `sub2apiUsage.pollIntervalSeconds`: polling interval in seconds. Range `30` to `86400`.
 - `sub2apiUsage.displayMode`: `percentage`, `quota`, `remaining`, or `compact`.
 - `sub2apiUsage.currencySymbol`: currency prefix. Default `$`.
 - `sub2apiUsage.decimals`: decimals for money and percentages. Range `0` to `6`.
@@ -95,32 +93,13 @@ Click the status bar item or run `Sub2api Usage: Show Details` to see:
 - model usage summary
 - actions for refresh, settings, and copying a summary
 
-## Test
-
-```bash
-npm test
-```
-
-## Type Check and Lint
-
-```bash
-npm run compile
-npm run lint
-```
-
-## Package VSIX
-
-```bash
-npm run package
-```
-
-The generated `.vsix` can be installed from VS Code with `Extensions: Install from VSIX...`.
-
 ## Design Notes
 
-- The token is never hard-coded and is not printed to logs.
+- The token is stored only in VS Code SecretStorage, never hard-coded, and not printed to logs.
+- The endpoint is read from user settings only, so workspace settings cannot redirect the stored token.
+- Refresh requires a configured endpoint and API key. External HTTP endpoints are rejected.
 - Polling reuses an in-flight refresh promise to avoid concurrent requests.
-- Configuration changes recreate the status bar only when alignment or priority changes, restart the timer, and refresh immediately.
+- Configuration changes recreate the status bar only when alignment or priority changes, restart the timer, and refresh only when auto start is enabled.
 - `deactivate` disposes commands, the status bar item, and the poll timer.
 
 ## Known Limits
@@ -128,3 +107,28 @@ The generated `.vsix` can be installed from VS Code with `Extensions: Install fr
 - The extension trusts the API's `remaining` field when it exists, even if it is larger than `limit - used`.
 - It performs lightweight response normalization instead of strict schema validation, so partial API responses can still render.
 - Network failures are shown in the status bar and details view; the next poll can recover automatically.
+
+## Development
+
+Run locally:
+
+1. Run `npm install`.
+2. Run `npm run compile`.
+3. Open this folder in VS Code.
+4. Press `F5` and choose `Run Extension`.
+5. In the Extension Development Host, configure `sub2apiUsage.endpoint` in user settings.
+6. Run `Sub2api Usage: Set API Key`.
+
+Verify:
+
+```bash
+npm run verify
+```
+
+Package VSIX:
+
+```bash
+npm run package
+```
+
+The generated `.vsix` can be installed from VS Code with `Extensions: Install from VSIX...`.

@@ -10,7 +10,7 @@ import {
 import type { RateLimitWindow, UsageResponse } from "./types";
 import { getErrorMessage } from "./utils";
 
-export type RefreshResult = "success" | "error" | "unconfigured";
+export type RefreshResult = "success" | "error" | "missingEndpoint" | "missingApiKey";
 
 export interface CommandDependencies {
   refresh: () => Promise<RefreshResult>;
@@ -33,7 +33,9 @@ export function registerCommands(
       const result = await dependencies.refresh();
       if (result === "success") {
         vscode.window.showInformationMessage("Sub2api usage refreshed.");
-      } else if (result === "unconfigured") {
+      } else if (result === "missingEndpoint") {
+        vscode.window.showWarningMessage("Sub2api usage endpoint is not configured.");
+      } else if (result === "missingApiKey") {
         vscode.window.showWarningMessage("Sub2api API key is not configured.");
       } else {
         vscode.window.showWarningMessage(`Sub2api usage refresh failed: ${getErrorMessage(dependencies.getLastError())}`);
@@ -77,6 +79,22 @@ export function registerCommands(
 }
 
 async function showDetails(dependencies: CommandDependencies): Promise<void> {
+  if (!dependencies.getConfig().endpoint) {
+    const selected = await vscode.window.showQuickPick<ActionQuickPickItem>(
+      [
+        { label: "$(gear) Open Settings", description: "Configure sub2apiUsage.endpoint", action: "settings" },
+        { label: "$(key) Set API Key", description: "Store token in SecretStorage", action: "setApiKey" }
+      ],
+      {
+        title: "Sub2api Usage Monitor",
+        placeHolder: "Usage endpoint is not configured."
+      }
+    );
+
+    await handleAction(selected, dependencies);
+    return;
+  }
+
   const apiKey = await dependencies.getApiKey();
   if (!apiKey) {
     const selected = await vscode.window.showQuickPick<ActionQuickPickItem>(

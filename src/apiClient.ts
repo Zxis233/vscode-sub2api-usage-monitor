@@ -2,6 +2,8 @@ import type { DailyUsage, ModelStat, RateLimit, UsageCounters, UsageResponse, Us
 import { isRecord, toBooleanValue, toFiniteNumber, toStringValue } from "./utils";
 
 export type UsageApiErrorCode =
+  | "missingEndpoint"
+  | "invalidEndpoint"
   | "timeout"
   | "unauthorized"
   | "forbidden"
@@ -35,11 +37,12 @@ export class UsageApiError extends Error {
 export class ApiClient {
   public async fetchUsage(options: FetchUsageOptions): Promise<UsageResponse> {
     const timeoutMs = options.timeoutMs ?? 10_000;
+    const endpoint = parseUsageEndpoint(options.endpoint);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(options.endpoint, {
+      const response = await fetch(endpoint.toString(), {
         method: "GET",
         headers: {
           accept: "application/json",
@@ -76,6 +79,31 @@ export class ApiClient {
       clearTimeout(timeout);
     }
   }
+}
+
+function parseUsageEndpoint(endpoint: string): URL {
+  const trimmed = endpoint.trim();
+  if (!trimmed) {
+    throw new UsageApiError("Usage API endpoint is not configured.", "missingEndpoint");
+  }
+
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    throw new UsageApiError("Usage API endpoint must be a valid URL.", "invalidEndpoint");
+  }
+
+  if (url.protocol === "https:" || (url.protocol === "http:" && isLoopbackHost(url.hostname))) {
+    return url;
+  }
+
+  throw new UsageApiError("Usage API endpoint must use HTTPS, except for localhost testing.", "invalidEndpoint");
+}
+
+function isLoopbackHost(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  return normalized === "localhost" || normalized === "127.0.0.1" || normalized === "::1" || normalized === "[::1]";
 }
 
 function createHttpError(statusCode: number, body: string): UsageApiError {
