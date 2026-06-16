@@ -2,7 +2,7 @@
   "name": "sub2api-usage-monitor",
   "displayName": "Sub2api Usage Monitor",
   "description": "Show Sub2api relay API usage and quota information in the VS Code status bar.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "Esing",
   "author": "Esing",
   "license": "MIT",
@@ -145,6 +145,29 @@
           "type": "number",
           "default": 95,
           "description": "Use error icon when usage reaches this percentage."
+        },
+        "sub2apiUsage.enableThresholdColors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Change the status bar background color when 7d usage reaches the warning or danger threshold."
+        },
+        "sub2apiUsage.warnThresholdColor": {
+          "type": "string",
+          "enum": [
+            "statusBarItem.warningBackground",
+            "statusBarItem.errorBackground"
+          ],
+          "default": "statusBarItem.warningBackground",
+          "markdownDescription": "VS Code theme color used for the status bar background when 7d usage reaches `sub2apiUsage.warnThresholdPercent`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
+        },
+        "sub2apiUsage.dangerThresholdColor": {
+          "type": "string",
+          "enum": [
+            "statusBarItem.warningBackground",
+            "statusBarItem.errorBackground"
+          ],
+          "default": "statusBarItem.errorBackground",
+          "markdownDescription": "VS Code theme color used for the status bar background when 7d usage reaches `sub2apiUsage.dangerThresholdPercent`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
         },
         "sub2apiUsage.autoStart": {
           "type": "boolean",

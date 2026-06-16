@@ -6,6 +6,7 @@ export const SECRET_API_KEY = "sub2apiUsage.apiKey";
 
 export type DisplayMode = "percentage" | "quota" | "remaining" | "compact";
 export type StatusBarSide = "left" | "right";
+export type ThresholdColor = "statusBarItem.warningBackground" | "statusBarItem.errorBackground";
 
 export interface ExtensionConfig {
   endpoint: string;
@@ -20,12 +21,17 @@ export interface ExtensionConfig {
   statusBarPriority: number;
   warnThresholdPercent: number;
   dangerThresholdPercent: number;
+  enableThresholdColors: boolean;
+  warnThresholdColor: ThresholdColor;
+  dangerThresholdColor: ThresholdColor;
   autoStart: boolean;
 }
 
 const DEFAULT_ENDPOINT = "";
 const MIN_POLL_INTERVAL_SECONDS = 30;
 const MAX_POLL_INTERVAL_SECONDS = 86_400;
+const DEFAULT_WARN_THRESHOLD_COLOR = "statusBarItem.warningBackground";
+const DEFAULT_DANGER_THRESHOLD_COLOR = "statusBarItem.errorBackground";
 
 export function getExtensionConfig(): ExtensionConfig {
   const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
@@ -50,6 +56,15 @@ export function getExtensionConfig(): ExtensionConfig {
     statusBarPriority: config.get<number>("statusBarPriority", 100),
     warnThresholdPercent: clampNumber(config.get<number>("warnThresholdPercent", 80), 0, 100),
     dangerThresholdPercent: clampNumber(config.get<number>("dangerThresholdPercent", 95), 0, 100),
+    enableThresholdColors: config.get<boolean>("enableThresholdColors", true),
+    warnThresholdColor: normalizeThresholdColor(
+      config.get<string>("warnThresholdColor", DEFAULT_WARN_THRESHOLD_COLOR),
+      DEFAULT_WARN_THRESHOLD_COLOR
+    ),
+    dangerThresholdColor: normalizeThresholdColor(
+      config.get<string>("dangerThresholdColor", DEFAULT_DANGER_THRESHOLD_COLOR),
+      DEFAULT_DANGER_THRESHOLD_COLOR
+    ),
     autoStart: config.get<boolean>("autoStart", true)
   };
 }
@@ -72,6 +87,14 @@ function normalizeDisplayMode(value: string): DisplayMode {
 
 function normalizeStatusBarAlignment(value: string): StatusBarSide {
   return value === "left" ? "left" : "right";
+}
+
+function normalizeThresholdColor(value: string, fallback: ThresholdColor): ThresholdColor {
+  if (value === "statusBarItem.warningBackground" || value === "statusBarItem.errorBackground") {
+    return value;
+  }
+
+  return fallback;
 }
 
 function normalizePlaceholderText(value: string): string {

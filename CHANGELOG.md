@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added optional status bar threshold background colors for 7d Warn and Danger usage levels.
+- Threshold icon escalation now uses the 7d usage percentage only.
+
 ## 0.1.0
 
 - Initial Sub2api Usage Monitor implementation.

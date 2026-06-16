@@ -134,13 +134,8 @@ export function formatPlainSummary(response: UsageResponse, config: ExtensionCon
   return formatDetailsLines(response, config).join("\n");
 }
 
-export function getThresholdPercent(response: UsageResponse, config: ExtensionConfig): number | undefined {
-  const sevenDayPercent = config.show7d ? getUsagePercent(getRateLimit(response, "7d")) : undefined;
-  if (sevenDayPercent !== undefined) {
-    return sevenDayPercent;
-  }
-
-  return config.show5h ? getUsagePercent(getRateLimit(response, "5h")) : undefined;
+export function getThresholdPercent(response: UsageResponse): number | undefined {
+  return getUsagePercent(getRateLimit(response, "7d"));
 }
 
 function formatCompactStatus(response: UsageResponse, config: ExtensionConfig): string {

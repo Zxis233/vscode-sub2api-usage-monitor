@@ -5,6 +5,7 @@ import {
   formatStatusBarText,
   getRateLimit,
   getRemaining,
+  getThresholdPercent,
   getUsagePercent
 } from "../formatter";
 import type { UsageResponse } from "../types";
@@ -22,6 +23,9 @@ const baseConfig: ExtensionConfig = {
   statusBarPriority: 100,
   warnThresholdPercent: 80,
   dangerThresholdPercent: 95,
+  enableThresholdColors: true,
+  warnThresholdColor: "statusBarItem.warningBackground",
+  dangerThresholdColor: "statusBarItem.errorBackground",
   autoStart: true
 };
 
@@ -111,6 +115,15 @@ describe("formatter", () => {
     expect(formatStatusBarText(response, { ...baseConfig, show5h: false, show7d: false, placeholderText: "API hidden" })).toBe(
       "API hidden"
     );
+  });
+
+  it("uses only 7d usage for threshold percentage", () => {
+    const fiveHourHighUsage: UsageResponse = {
+      rate_limits: [{ window: "5h", limit: 10, used: 9 }]
+    };
+
+    expect(getThresholdPercent(fiveHourHighUsage)).toBeUndefined();
+    expect(getThresholdPercent(response)).toBeCloseTo((3.95166425 / 180) * 100, 8);
   });
 
   it("computes remaining only when API remaining is absent", () => {

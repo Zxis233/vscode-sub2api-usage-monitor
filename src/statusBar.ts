@@ -28,30 +28,35 @@ export class UsageStatusBar implements vscode.Disposable {
   }
 
   public showUnconfigured(): void {
+    this.clearThresholdColor();
     this.item.text = "$(key) Sub2api Usage: Set token";
     this.item.tooltip = "No API key configured. Run Sub2api Usage: Set API Key to store it in VS Code SecretStorage.";
     this.item.show();
   }
 
   public showMissingEndpoint(): void {
+    this.clearThresholdColor();
     this.item.text = "$(gear) Sub2api Usage: Set endpoint";
     this.item.tooltip = "No usage endpoint configured. Open Sub2api Usage Monitor settings to set sub2apiUsage.endpoint.";
     this.item.show();
   }
 
   public showIdle(): void {
+    this.clearThresholdColor();
     this.item.text = "$(pulse) Sub2api Usage: Ready";
     this.item.tooltip = "Sub2api Usage Monitor is ready. Run Sub2api Usage: Refresh to query usage.";
     this.item.show();
   }
 
   public showLoading(): void {
+    this.clearThresholdColor();
     this.item.text = "$(sync~spin) Sub2api Usage";
     this.item.tooltip = "Refreshing Sub2api usage...";
     this.item.show();
   }
 
   public showError(error: unknown): void {
+    this.clearThresholdColor();
     const message = getErrorMessage(error);
     this.item.text = "$(warning) Sub2api Usage: Error";
     this.item.tooltip = `Sub2api usage refresh failed: ${message}`;
@@ -66,6 +71,7 @@ export class UsageStatusBar implements vscode.Disposable {
 
     this.item.text = `${icon} ${formatStatusBarText(response, this.config)}`;
     this.item.tooltip = tooltip;
+    this.applyThresholdColor(response);
     this.item.show();
   }
 
@@ -84,7 +90,7 @@ export class UsageStatusBar implements vscode.Disposable {
   }
 
   private getStatusIcon(response: UsageResponse): string {
-    const percent = getThresholdPercent(response, this.config);
+    const percent = getThresholdPercent(response);
 
     if (percent === undefined) {
       return "$(pulse)";
@@ -99,5 +105,32 @@ export class UsageStatusBar implements vscode.Disposable {
     }
 
     return "$(pulse)";
+  }
+
+  private applyThresholdColor(response: UsageResponse): void {
+    this.clearThresholdColor();
+
+    if (!this.config.enableThresholdColors) {
+      return;
+    }
+
+    const percent = getThresholdPercent(response);
+
+    if (percent === undefined) {
+      return;
+    }
+
+    if (percent >= this.config.dangerThresholdPercent) {
+      this.item.backgroundColor = new vscode.ThemeColor(this.config.dangerThresholdColor);
+      return;
+    }
+
+    if (percent >= this.config.warnThresholdPercent) {
+      this.item.backgroundColor = new vscode.ThemeColor(this.config.warnThresholdColor);
+    }
+  }
+
+  private clearThresholdColor(): void {
+    this.item.backgroundColor = undefined;
   }
 }
