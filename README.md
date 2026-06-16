@@ -65,22 +65,22 @@ Token:
 - `sub2apiUsage.placeholderText`: status bar text shown when both `show5h` and `show7d` are disabled.
 - `sub2apiUsage.statusBarAlignment`: `left` or `right`.
 - `sub2apiUsage.statusBarPriority`: status bar priority.
-- `sub2apiUsage.warnThresholdPercent`: warning icon threshold.
-- `sub2apiUsage.dangerThresholdPercent`: error icon threshold.
-- `sub2apiUsage.enableThresholdColors`: change the status bar background color when 7d usage reaches a threshold.
-- `sub2apiUsage.warnThresholdColor`: status bar background theme color used after the warn threshold.
-- `sub2apiUsage.dangerThresholdColor`: status bar background theme color used after the danger threshold.
+- `sub2apiUsage.threshold.percent.warn`: warning icon threshold.
+- `sub2apiUsage.threshold.percent.danger`: error icon threshold.
+- `sub2apiUsage.threshold.enableColors`: change the status bar background color when 7d usage reaches a threshold.
+- `sub2apiUsage.threshold.color.warn`: status bar background theme color used after the warn threshold.
+- `sub2apiUsage.threshold.color.danger`: status bar background theme color used after the danger threshold.
 - `sub2apiUsage.autoStart`: refresh and poll automatically after startup.
 
 Example threshold color settings:
 
 ```json
 {
-  "sub2apiUsage.enableThresholdColors": true,
-  "sub2apiUsage.warnThresholdPercent": 80,
-  "sub2apiUsage.dangerThresholdPercent": 95,
-  "sub2apiUsage.warnThresholdColor": "statusBarItem.warningBackground",
-  "sub2apiUsage.dangerThresholdColor": "statusBarItem.errorBackground"
+  "sub2apiUsage.threshold.enableColors": true,
+  "sub2apiUsage.threshold.percent.warn": 80,
+  "sub2apiUsage.threshold.percent.danger": 95,
+  "sub2apiUsage.threshold.color.warn": "statusBarItem.warningBackground",
+  "sub2apiUsage.threshold.color.danger": "statusBarItem.errorBackground"
 }
 ```
 
@@ -98,8 +98,9 @@ The extension reads `rate_limits` by `window`:
 
 - The status icon and threshold background color use the 7d percentage only.
 - If 7d is unavailable or has an invalid/zero `limit`, no threshold icon or color is applied.
-- Threshold colors are optional and controlled by `sub2apiUsage.enableThresholdColors`.
+- Threshold colors are optional and controlled by `sub2apiUsage.threshold.enableColors`.
 - VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds.
+- Legacy threshold settings such as `sub2apiUsage.warnThresholdPercent` are still read when the new grouped setting is not configured.
 
 ## Details View
 
