@@ -2,7 +2,7 @@
   "name": "sub2api-usage-monitor",
   "displayName": "Sub2api Usage Monitor",
   "description": "Show Sub2api relay API usage and quota information in the VS Code status bar.",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "publisher": "Esing",
   "author": "Esing",
   "license": "MIT",
@@ -74,12 +74,14 @@
         "sub2apiUsage.endpoint": {
           "type": "string",
           "default": "",
+          "order": 10,
           "scope": "machine",
           "markdownDescription": "Usage query endpoint. Configure this in user settings. The extension sends tokens only to HTTPS endpoints, except localhost testing."
         },
         "sub2apiUsage.pollIntervalSeconds": {
           "type": "number",
           "default": 300,
+          "order": 20,
           "minimum": 30,
           "maximum": 86400,
           "description": "Polling interval in seconds."
@@ -93,16 +95,19 @@
             "compact"
           ],
           "default": "percentage",
+          "order": 30,
           "description": "Status bar display mode."
         },
         "sub2apiUsage.currencySymbol": {
           "type": "string",
           "default": "$",
+          "order": 40,
           "description": "Currency prefix for quota values."
         },
         "sub2apiUsage.decimals": {
           "type": "number",
           "default": 2,
+          "order": 50,
           "minimum": 0,
           "maximum": 6,
           "description": "Decimal places for money and percentage values."
@@ -110,16 +115,19 @@
         "sub2apiUsage.show5h": {
           "type": "boolean",
           "default": true,
+          "order": 60,
           "description": "Show the 5h rate limit when available."
         },
         "sub2apiUsage.show7d": {
           "type": "boolean",
           "default": true,
+          "order": 70,
           "description": "Show the 7d rate limit when available."
         },
         "sub2apiUsage.placeholderText": {
           "type": "string",
           "default": "Sub2api Usage",
+          "order": 80,
           "description": "Status bar text shown when both 5h and 7d rate limit displays are disabled."
         },
         "sub2apiUsage.statusBarAlignment": {
@@ -129,26 +137,31 @@
             "right"
           ],
           "default": "right",
+          "order": 90,
           "description": "Status bar alignment."
         },
         "sub2apiUsage.statusBarPriority": {
           "type": "number",
           "default": 100,
+          "order": 100,
           "description": "Status bar priority."
         },
         "sub2apiUsage.threshold.percent.warn": {
           "type": "number",
           "default": 80,
+          "order": 110,
           "description": "Use warning icon when 7d usage reaches this percentage."
         },
         "sub2apiUsage.threshold.percent.danger": {
           "type": "number",
           "default": 95,
+          "order": 120,
           "description": "Use error icon when 7d usage reaches this percentage."
         },
         "sub2apiUsage.threshold.enableColors": {
           "type": "boolean",
           "default": true,
+          "order": 130,
           "description": "Change the status bar background color when 7d usage reaches the warning or danger threshold."
         },
         "sub2apiUsage.threshold.color.warn": {
@@ -158,6 +171,7 @@
             "statusBarItem.errorBackground"
           ],
           "default": "statusBarItem.warningBackground",
+          "order": 140,
           "markdownDescription": "VS Code theme color used for the status bar background when 7d usage reaches `sub2apiUsage.threshold.percent.warn`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
         },
         "sub2apiUsage.threshold.color.danger": {
@@ -167,11 +181,13 @@
             "statusBarItem.errorBackground"
           ],
           "default": "statusBarItem.errorBackground",
+          "order": 150,
           "markdownDescription": "VS Code theme color used for the status bar background when 7d usage reaches `sub2apiUsage.threshold.percent.danger`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
         },
         "sub2apiUsage.autoStart": {
           "type": "boolean",
           "default": true,
+          "order": 160,
           "description": "Start polling automatically after VS Code starts."
         }
       }

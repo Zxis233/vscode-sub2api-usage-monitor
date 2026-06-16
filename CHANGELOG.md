@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added explicit Settings UI ordering so Warn threshold options appear before Danger options.
 - Renamed threshold settings to grouped `sub2apiUsage.threshold.*` keys so related options stay adjacent in VS Code Settings.
 - Added optional status bar threshold background colors for 7d Warn and Danger usage levels.
 - Threshold icon escalation now uses the 7d usage percentage only.
