@@ -14,6 +14,7 @@ const baseConfig: ExtensionConfig = {
   endpoint: "https://your-sub2api.example.com/v1/usage",
   pollIntervalSeconds: 300,
   displayMode: "percentage",
+  statusLabel: "Sub2api",
   currencySymbol: "$",
   decimals: 2,
   show5h: true,
@@ -95,6 +96,18 @@ describe("formatter", () => {
 
   it("formats compact mode with 7d first", () => {
     expect(formatStatusBarText(response, { ...baseConfig, displayMode: "compact" })).toBe("Sub2api 7d 2.20%");
+  });
+
+  it("formats custom status label", () => {
+    expect(formatStatusBarText(response, { ...baseConfig, statusLabel: "Relay A", displayMode: "compact" })).toBe(
+      "Relay A 7d 2.20%"
+    );
+  });
+
+  it("preserves trailing status label spaces", () => {
+    const text = formatStatusBarText(response, { ...baseConfig, statusLabel: "Relay A  ", displayMode: "compact" });
+
+    expect(text).toBe(`Relay A${"\u00a0".repeat(2)} 7d 2.20%`);
   });
 
   it("falls back to 5h in compact mode when 7d is missing", () => {

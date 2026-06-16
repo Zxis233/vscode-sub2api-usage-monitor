@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Preserved trailing spaces in `sub2apiUsage.statusLabel` when rendering status bar usage text.
+- Added `sub2apiUsage.statusLabel` for customizing the status bar usage prefix.
 - Added explicit Settings UI ordering so Warn threshold options appear before Danger options.
 - Renamed threshold settings to grouped `sub2apiUsage.threshold.*` keys so related options stay adjacent in VS Code Settings.
 - Added optional status bar threshold background colors for 7d Warn and Danger usage levels.

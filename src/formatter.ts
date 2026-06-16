@@ -64,7 +64,7 @@ export function formatStatusBarText(response: UsageResponse, config: ExtensionCo
     parts.push(formatWindowStatus("7d", getRateLimit(response, "7d"), config));
   }
 
-  return parts.length > 0 ? `Sub2api ${parts.join(" | ")}` : config.placeholderText;
+  return parts.length > 0 ? `${formatStatusLabel(config.statusLabel)} ${parts.join(" | ")}` : config.placeholderText;
 }
 
 export function formatTooltip(response: UsageResponse, config: ExtensionConfig): string {
@@ -143,11 +143,11 @@ function formatCompactStatus(response: UsageResponse, config: ExtensionConfig): 
   const fiveHour = config.show5h ? getRateLimit(response, "5h") : undefined;
 
   if (sevenDay) {
-    return `Sub2api ${formatWindowStatus("7d", sevenDay, { ...config, displayMode: "percentage" })}`;
+    return `${formatStatusLabel(config.statusLabel)} ${formatWindowStatus("7d", sevenDay, { ...config, displayMode: "percentage" })}`;
   }
 
   if (fiveHour) {
-    return `Sub2api ${formatWindowStatus("5h", fiveHour, { ...config, displayMode: "percentage" })}`;
+    return `${formatStatusLabel(config.statusLabel)} ${formatWindowStatus("5h", fiveHour, { ...config, displayMode: "percentage" })}`;
   }
 
   return config.placeholderText;
@@ -167,6 +167,10 @@ function formatWindowStatus(window: RateLimitWindow, rateLimit: RateLimit | unde
     case "compact":
       return `${window} ${formatPercent(getUsagePercent(rateLimit), config)}`;
   }
+}
+
+function formatStatusLabel(value: string): string {
+  return value.replace(/ +$/u, (spaces) => "\u00a0".repeat(spaces.length));
 }
 
 function formatRateLimitTooltip(window: RateLimitWindow, rateLimit: RateLimit | undefined, config: ExtensionConfig): string {

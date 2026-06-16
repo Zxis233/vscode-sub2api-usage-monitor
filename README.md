@@ -58,6 +58,7 @@ Token:
 - `sub2apiUsage.endpoint`: usage endpoint. Empty by default and read from user settings only.
 - `sub2apiUsage.pollIntervalSeconds`: polling interval in seconds. Range `30` to `86400`.
 - `sub2apiUsage.displayMode`: `percentage`, `quota`, `remaining`, or `compact`.
+- `sub2apiUsage.statusLabel`: status bar text prefix shown before usage windows. Default `Sub2api`. Trailing spaces are preserved.
 - `sub2apiUsage.currencySymbol`: currency prefix. Default `$`.
 - `sub2apiUsage.decimals`: decimals for money and percentages. Range `0` to `6`.
 - `sub2apiUsage.show5h`: show the 5h window.
@@ -84,6 +85,14 @@ Example threshold color settings:
 }
 ```
 
+Example custom status label:
+
+```json
+{
+  "sub2apiUsage.statusLabel": "Relay A"
+}
+```
+
 ## Display Behavior
 
 The extension reads `rate_limits` by `window`:
@@ -93,6 +102,8 @@ The extension reads `rate_limits` by `window`:
 - Missing windows show `N/A`.
 - `sub2apiUsage.show5h` and `sub2apiUsage.show7d` can independently hide each window.
 - If both windows are hidden, the status bar shows `sub2apiUsage.placeholderText`.
+- `sub2apiUsage.statusLabel` controls the prefix in displays such as `Relay A 7d 2.20%`.
+- Trailing spaces in `sub2apiUsage.statusLabel` are rendered as non-breaking spaces so VS Code does not collapse them.
 - A missing or zero `limit` makes percentage display `N/A`.
 - `remaining` uses the API value first. If it is absent, the extension computes `limit - used`.
 

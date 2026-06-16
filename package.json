@@ -2,7 +2,7 @@
   "name": "sub2api-usage-monitor",
   "displayName": "Sub2api Usage Monitor",
   "description": "Show Sub2api relay API usage and quota information in the VS Code status bar.",
-  "version": "0.3.3",
+  "version": "0.3.5",
   "publisher": "Esing",
   "author": "Esing",
   "license": "MIT",
@@ -104,10 +104,16 @@
           "order": 40,
           "description": "Currency prefix for quota values."
         },
+        "sub2apiUsage.statusLabel": {
+          "type": "string",
+          "default": "Sub2api",
+          "order": 50,
+          "description": "Text prefix shown before usage windows in the status bar. Trailing spaces are preserved."
+        },
         "sub2apiUsage.decimals": {
           "type": "number",
           "default": 2,
-          "order": 50,
+          "order": 60,
           "minimum": 0,
           "maximum": 6,
           "description": "Decimal places for money and percentage values."
@@ -115,19 +121,19 @@
         "sub2apiUsage.show5h": {
           "type": "boolean",
           "default": true,
-          "order": 60,
+          "order": 70,
           "description": "Show the 5h rate limit when available."
         },
         "sub2apiUsage.show7d": {
           "type": "boolean",
           "default": true,
-          "order": 70,
+          "order": 80,
           "description": "Show the 7d rate limit when available."
         },
         "sub2apiUsage.placeholderText": {
           "type": "string",
           "default": "Sub2api Usage",
-          "order": 80,
+          "order": 90,
           "description": "Status bar text shown when both 5h and 7d rate limit displays are disabled."
         },
         "sub2apiUsage.statusBarAlignment": {
@@ -137,31 +143,31 @@
             "right"
           ],
           "default": "right",
-          "order": 90,
+          "order": 100,
           "description": "Status bar alignment."
         },
         "sub2apiUsage.statusBarPriority": {
           "type": "number",
           "default": 100,
-          "order": 100,
+          "order": 110,
           "description": "Status bar priority."
         },
         "sub2apiUsage.threshold.percent.warn": {
           "type": "number",
           "default": 80,
-          "order": 110,
+          "order": 120,
           "description": "Use warning icon when 7d usage reaches this percentage."
         },
         "sub2apiUsage.threshold.percent.danger": {
           "type": "number",
           "default": 95,
-          "order": 120,
+          "order": 130,
           "description": "Use error icon when 7d usage reaches this percentage."
         },
         "sub2apiUsage.threshold.enableColors": {
           "type": "boolean",
           "default": true,
-          "order": 130,
+          "order": 140,
           "description": "Change the status bar background color when 7d usage reaches the warning or danger threshold."
         },
         "sub2apiUsage.threshold.color.warn": {
@@ -171,7 +177,7 @@
             "statusBarItem.errorBackground"
           ],
           "default": "statusBarItem.warningBackground",
-          "order": 140,
+          "order": 150,
           "markdownDescription": "VS Code theme color used for the status bar background when 7d usage reaches `sub2apiUsage.threshold.percent.warn`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
         },
         "sub2apiUsage.threshold.color.danger": {
@@ -181,13 +187,13 @@
             "statusBarItem.errorBackground"
           ],
           "default": "statusBarItem.errorBackground",
-          "order": 150,
+          "order": 160,
           "markdownDescription": "VS Code theme color used for the status bar background when 7d usage reaches `sub2apiUsage.threshold.percent.danger`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
         },
         "sub2apiUsage.autoStart": {
           "type": "boolean",
           "default": true,
-          "order": 160,
+          "order": 170,
           "description": "Start polling automatically after VS Code starts."
         }
       }

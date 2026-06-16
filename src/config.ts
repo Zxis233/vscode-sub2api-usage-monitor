@@ -12,6 +12,7 @@ export interface ExtensionConfig {
   endpoint: string;
   pollIntervalSeconds: number;
   displayMode: DisplayMode;
+  statusLabel: string;
   currencySymbol: string;
   decimals: number;
   show5h: boolean;
@@ -57,6 +58,7 @@ export function getExtensionConfig(): ExtensionConfig {
     endpoint: normalizeEndpoint(getGlobalSetting(config, "endpoint", DEFAULT_ENDPOINT)),
     pollIntervalSeconds,
     displayMode: normalizeDisplayMode(config.get<string>("displayMode", "percentage")),
+    statusLabel: normalizeStatusLabel(config.get<string>("statusLabel", "Sub2api")),
     currencySymbol: config.get<string>("currencySymbol", "$"),
     decimals,
     show5h: config.get<boolean>("show5h", true),
@@ -120,6 +122,10 @@ function normalizeDisplayMode(value: string): DisplayMode {
 
 function normalizeStatusBarAlignment(value: string): StatusBarSide {
   return value === "left" ? "left" : "right";
+}
+
+function normalizeStatusLabel(value: string): string {
+  return value.trim() ? value : "Sub2api";
 }
 
 function normalizeThresholdColor(value: string, fallback: ThresholdColor): ThresholdColor {
