@@ -33,4 +33,17 @@ describe("ApiClient endpoint validation", () => {
     await expect(new ApiClient().fetchUsage({ endpoint: "http://localhost:3000/usage", apiKey: "token" })).resolves.toEqual({});
     expect(fetchMock).toHaveBeenCalledOnce();
   });
+
+  it("preserves all three backend quota windows including daily reset data", async () => {
+    const rateLimits = ["5h", "1d", "7d"].map((window) => ({
+      window, limit: 100, used: 25, remaining: 75,
+      window_start: "2026-09-13T00:00:00Z", reset_at: "2026-09-14T00:00:00Z"
+    }));
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      mode: "quota_limited", status: "active", isValid: true, rate_limits: rateLimits
+    }), { status: 200 })));
+
+    const result = await new ApiClient().fetchUsage({ endpoint: "https://example.com/v1/usage", apiKey: "test" });
+    expect(result.rate_limits).toEqual(rateLimits);
+  });
 });

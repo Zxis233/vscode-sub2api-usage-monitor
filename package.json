@@ -124,6 +124,12 @@
           "order": 70,
           "description": "Show the 5h rate limit when available."
         },
+        "sub2apiUsage.show1d": {
+          "type": "boolean",
+          "default": true,
+          "order": 75,
+          "description": "Show the 1d rate limit when available."
+        },
         "sub2apiUsage.show7d": {
           "type": "boolean",
           "default": true,
@@ -134,7 +140,7 @@
           "type": "string",
           "default": "Sub2api Usage",
           "order": 90,
-          "description": "Status bar text shown when both 5h and 7d rate limit displays are disabled."
+          "description": "Status bar text shown when no available rate limit windows are enabled for display."
         },
         "sub2apiUsage.statusBarAlignment": {
           "type": "string",
@@ -156,19 +162,19 @@
           "type": "number",
           "default": 80,
           "order": 120,
-          "description": "Use warning icon when 7d usage reaches this percentage."
+          "description": "Use warning icon when the highest available quota tier reaches this percentage (7d, then 1d, then 5h)."
         },
         "sub2apiUsage.threshold.percent.danger": {
           "type": "number",
           "default": 95,
           "order": 130,
-          "description": "Use error icon when 7d usage reaches this percentage."
+          "description": "Use error icon when the highest available quota tier reaches this percentage (7d, then 1d, then 5h)."
         },
         "sub2apiUsage.threshold.enableColors": {
           "type": "boolean",
           "default": true,
           "order": 140,
-          "description": "Change the status bar background color when 7d usage reaches the warning or danger threshold."
+          "description": "Change the status bar background color when the highest available quota tier reaches the warning or danger threshold (7d, then 1d, then 5h)."
         },
         "sub2apiUsage.threshold.color.warn": {
           "type": "string",
@@ -178,7 +184,7 @@
           ],
           "default": "statusBarItem.warningBackground",
           "order": 150,
-          "markdownDescription": "VS Code theme color used for the status bar background when 7d usage reaches `sub2apiUsage.threshold.percent.warn`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
+          "markdownDescription": "VS Code theme color used for the status bar background when the highest available quota tier (7d, then 1d, then 5h) reaches `sub2apiUsage.threshold.percent.warn`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
         },
         "sub2apiUsage.threshold.color.danger": {
           "type": "string",
@@ -188,7 +194,7 @@
           ],
           "default": "statusBarItem.errorBackground",
           "order": 160,
-          "markdownDescription": "VS Code theme color used for the status bar background when 7d usage reaches `sub2apiUsage.threshold.percent.danger`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
+          "markdownDescription": "VS Code theme color used for the status bar background when the highest available quota tier (7d, then 1d, then 5h) reaches `sub2apiUsage.threshold.percent.danger`. VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds."
         },
         "sub2apiUsage.autoStart": {
           "type": "boolean",

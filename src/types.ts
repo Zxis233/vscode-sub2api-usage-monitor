@@ -64,4 +64,4 @@ export interface UsageCounters {
   total_tokens?: number;
 }
 
-export type RateLimitWindow = "5h" | "7d";
+export type RateLimitWindow = "5h" | "1d" | "7d";

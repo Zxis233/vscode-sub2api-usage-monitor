@@ -9,6 +9,8 @@ Sub2api Usage Monitor is a VS Code extension that shows Sub2api relay API usage 
 Examples:
 
 - `$(pulse) Sub2api 5h 13.17% | 7d 2.20%`
+- `$(pulse) Sub2api 7d 2.20%` (7d-only API key)
+- `$(pulse) Sub2api 5h 13.17% | 1d 6.59% | 7d 2.20%`
 - `$(pulse) Sub2api 5h $3.95/$30.00 | 7d $3.95/$180.00`
 - `$(pulse) Sub2api 5h $176.05 left | 7d $176.05 left`
 - `$(gear) Sub2api Usage: Set endpoint`
@@ -62,13 +64,14 @@ Token:
 - `sub2apiUsage.currencySymbol`: currency prefix. Default `$`.
 - `sub2apiUsage.decimals`: decimals for money and percentages. Range `0` to `6`.
 - `sub2apiUsage.show5h`: show the 5h window.
+- `sub2apiUsage.show1d`: show the 1d window when returned by the API. Default `true`.
 - `sub2apiUsage.show7d`: show the 7d window.
-- `sub2apiUsage.placeholderText`: status bar text shown when both `show5h` and `show7d` are disabled.
+- `sub2apiUsage.placeholderText`: status bar text shown when no available windows are enabled for display.
 - `sub2apiUsage.statusBarAlignment`: `left` or `right`.
 - `sub2apiUsage.statusBarPriority`: status bar priority.
 - `sub2apiUsage.threshold.percent.warn`: warning icon threshold.
 - `sub2apiUsage.threshold.percent.danger`: error icon threshold.
-- `sub2apiUsage.threshold.enableColors`: change the status bar background color when 7d usage reaches a threshold.
+- `sub2apiUsage.threshold.enableColors`: change the status bar background color when the highest available quota tier reaches a threshold (7d, then 1d, then 5h).
 - `sub2apiUsage.threshold.color.warn`: status bar background theme color used after the warn threshold.
 - `sub2apiUsage.threshold.color.danger`: status bar background theme color used after the danger threshold.
 - `sub2apiUsage.autoStart`: refresh and poll automatically after startup.
@@ -98,17 +101,20 @@ Example custom status label:
 The extension reads `rate_limits` by `window`:
 
 - `window === "5h"` is treated as the 5h quota.
+- `window === "1d"` is treated as the 24-hour quota.
 - `window === "7d"` is treated as the 7d quota.
-- Missing windows show `N/A`.
-- `sub2apiUsage.show5h` and `sub2apiUsage.show7d` can independently hide each window.
-- If both windows are hidden, the status bar shows `sub2apiUsage.placeholderText`.
+- Only returned windows are displayed, ordered 5h, 1d, 7d. A 7d-only key shows only 7d; a 5h/7d key shows both.
+- `sub2apiUsage.show5h`, `sub2apiUsage.show1d`, and `sub2apiUsage.show7d` can independently hide each window in the status bar.
+- Compact mode shows the highest enabled, available tier: 7d, then 1d, then 5h.
+- If no returned windows are enabled, the status bar shows `sub2apiUsage.placeholderText`. Missing window data does not imply unlimited quota.
+- Tooltip, details, and copied summaries list all returned known windows, regardless of status bar visibility settings.
 - `sub2apiUsage.statusLabel` controls the prefix in displays such as `Relay A 7d 2.20%`.
 - Trailing spaces in `sub2apiUsage.statusLabel` are rendered as non-breaking spaces so VS Code does not collapse them.
 - A missing or zero `limit` makes percentage display `N/A`.
 - `remaining` uses the API value first. If it is absent, the extension computes `limit - used`.
 
-- The status icon and threshold background color use the 7d percentage only.
-- If 7d is unavailable or has an invalid/zero `limit`, no threshold icon or color is applied.
+- The status icon and threshold background color use the highest available tier: 7d, then 1d, then 5h, regardless of visibility settings.
+- If that tier has a missing/invalid usage or limit, or a zero limit, no threshold icon or color is applied. Lower tiers are not used to override it.
 - Threshold colors are optional and controlled by `sub2apiUsage.threshold.enableColors`.
 - VS Code currently supports `statusBarItem.warningBackground` and `statusBarItem.errorBackground` for status bar item backgrounds.
 - Legacy threshold settings such as `sub2apiUsage.warnThresholdPercent` are still read when the new grouped setting is not configured.
@@ -119,7 +125,7 @@ Click the status bar item or run `Sub2api Usage: Show Details` to see:
 
 - status, mode, expiry, RPM, TPM
 - today and total cost
-- 5h and 7d limit, used, remaining, reset time, raw remaining
+- available 5h, 1d, and 7d limit, used, remaining, reset time, raw remaining
 - model usage summary
 - actions for refresh, settings, and copying a summary
 

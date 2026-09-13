@@ -16,6 +16,7 @@ export interface ExtensionConfig {
   currencySymbol: string;
   decimals: number;
   show5h: boolean;
+  show1d: boolean;
   show7d: boolean;
   placeholderText: string;
   statusBarAlignment: StatusBarSide;
@@ -62,6 +63,7 @@ export function getExtensionConfig(): ExtensionConfig {
     currencySymbol: config.get<string>("currencySymbol", "$"),
     decimals,
     show5h: config.get<boolean>("show5h", true),
+    show1d: config.get<boolean>("show1d", true),
     show7d: config.get<boolean>("show7d", true),
     placeholderText: normalizePlaceholderText(config.get<string>("placeholderText", "Sub2api Usage")),
     statusBarAlignment: normalizeStatusBarAlignment(config.get<string>("statusBarAlignment", "right")),

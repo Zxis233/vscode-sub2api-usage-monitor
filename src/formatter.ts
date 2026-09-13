@@ -1,6 +1,15 @@
 import type { ExtensionConfig } from "./config";
 import type { RateLimit, RateLimitWindow, UsageResponse } from "./types";
 
+const RATE_LIMIT_WINDOWS: readonly RateLimitWindow[] = ["5h", "1d", "7d"];
+
+export function getAvailableRateLimits(response: UsageResponse): (RateLimit & { window: RateLimitWindow })[] {
+  return RATE_LIMIT_WINDOWS.flatMap((window) => {
+    const rateLimit = getRateLimit(response, window);
+    return rateLimit ? [{ ...rateLimit, window }] : [];
+  });
+}
+
 export function getRateLimit(response: UsageResponse, window: RateLimitWindow): RateLimit | undefined {
   return response.rate_limits?.find((rateLimit) => rateLimit.window === window);
 }
@@ -46,23 +55,15 @@ export function formatPercent(value: number | undefined, config: ExtensionConfig
 }
 
 export function formatStatusBarText(response: UsageResponse, config: ExtensionConfig): string {
-  if (!config.show5h && !config.show7d) {
-    return config.placeholderText;
-  }
-
-  if (config.displayMode === "compact") {
-    return formatCompactStatus(response, config);
-  }
-
-  const parts: string[] = [];
-
-  if (config.show5h) {
-    parts.push(formatWindowStatus("5h", getRateLimit(response, "5h"), config));
-  }
-
-  if (config.show7d) {
-    parts.push(formatWindowStatus("7d", getRateLimit(response, "7d"), config));
-  }
+  const visible = getAvailableRateLimits(response).filter((rateLimit) => {
+    switch (rateLimit.window) {
+      case "5h": return config.show5h;
+      case "1d": return config.show1d;
+      case "7d": return config.show7d;
+    }
+  });
+  const selected = config.displayMode === "compact" ? visible.slice(-1) : visible;
+  const parts = selected.map((rateLimit) => formatWindowStatus(rateLimit.window, rateLimit, config));
 
   return parts.length > 0 ? `${formatStatusLabel(config.statusLabel)} ${parts.join(" | ")}` : config.placeholderText;
 }
@@ -80,8 +81,7 @@ export function formatTooltip(response: UsageResponse, config: ExtensionConfig):
     `- Total Cost: ${formatMoney(response.usage?.total?.actual_cost ?? response.usage?.total?.cost, config)}`,
     "",
     "#### Rate Limits",
-    formatRateLimitTooltip("5h", getRateLimit(response, "5h"), config),
-    formatRateLimitTooltip("7d", getRateLimit(response, "7d"), config),
+    ...formatAvailableRateLimits(response, config, formatRateLimitTooltip),
     "",
     "#### Models"
   ];
@@ -107,8 +107,7 @@ export function formatDetailsLines(response: UsageResponse, config: ExtensionCon
     `Expires: ${formatText(response.expires_at)}`,
     `Days Until Expiry: ${formatPlainNumber(response.days_until_expiry)}`,
     "",
-    formatRateLimitDetail("5h", getRateLimit(response, "5h"), config),
-    formatRateLimitDetail("7d", getRateLimit(response, "7d"), config),
+    ...formatAvailableRateLimits(response, config, formatRateLimitDetail),
     "",
     `Today: requests ${formatPlainNumber(response.usage?.today?.requests)} / cost ${formatMoney(response.usage?.today?.actual_cost ?? response.usage?.today?.cost, config)}`,
     `Total: requests ${formatPlainNumber(response.usage?.total?.requests)} / cost ${formatMoney(response.usage?.total?.actual_cost ?? response.usage?.total?.cost, config)}`,
@@ -135,22 +134,19 @@ export function formatPlainSummary(response: UsageResponse, config: ExtensionCon
 }
 
 export function getThresholdPercent(response: UsageResponse): number | undefined {
-  return getUsagePercent(getRateLimit(response, "7d"));
+  const available = getAvailableRateLimits(response);
+  return getUsagePercent(available[available.length - 1]);
 }
 
-function formatCompactStatus(response: UsageResponse, config: ExtensionConfig): string {
-  const sevenDay = config.show7d ? getRateLimit(response, "7d") : undefined;
-  const fiveHour = config.show5h ? getRateLimit(response, "5h") : undefined;
-
-  if (sevenDay) {
-    return `${formatStatusLabel(config.statusLabel)} ${formatWindowStatus("7d", sevenDay, { ...config, displayMode: "percentage" })}`;
-  }
-
-  if (fiveHour) {
-    return `${formatStatusLabel(config.statusLabel)} ${formatWindowStatus("5h", fiveHour, { ...config, displayMode: "percentage" })}`;
-  }
-
-  return config.placeholderText;
+function formatAvailableRateLimits(
+  response: UsageResponse,
+  config: ExtensionConfig,
+  formatter: (window: RateLimitWindow, rateLimit: RateLimit, config: ExtensionConfig) => string
+): string[] {
+  const available = getAvailableRateLimits(response);
+  return available.length > 0
+    ? available.map((rateLimit) => formatter(rateLimit.window, rateLimit, config))
+    : ["No rate limit data available."];
 }
 
 function formatWindowStatus(window: RateLimitWindow, rateLimit: RateLimit | undefined, config: ExtensionConfig): string {

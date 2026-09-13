@@ -4,10 +4,10 @@ import { SECRET_API_KEY } from "./config";
 import {
   formatMoney,
   formatPlainSummary,
-  getRateLimit,
+  getAvailableRateLimits,
   getRemaining
 } from "./formatter";
-import type { RateLimitWindow, UsageResponse } from "./types";
+import type { RateLimit, RateLimitWindow, UsageResponse } from "./types";
 import { getErrorMessage } from "./utils";
 
 export type RefreshResult = "success" | "error" | "missingEndpoint" | "missingApiKey";
@@ -143,6 +143,7 @@ async function showDetails(dependencies: CommandDependencies): Promise<void> {
 }
 
 function buildDetailsItems(response: UsageResponse, config: ExtensionConfig): ActionQuickPickItem[] {
+  const rateLimits = getAvailableRateLimits(response);
   const items: ActionQuickPickItem[] = [
     { label: "Account", kind: vscode.QuickPickItemKind.Separator },
     { label: `Status: ${response.status ?? "N/A"}` },
@@ -151,8 +152,9 @@ function buildDetailsItems(response: UsageResponse, config: ExtensionConfig): Ac
     { label: `Days Until Expiry: ${response.days_until_expiry ?? "N/A"}` },
     { label: `RPM / TPM: ${response.usage?.rpm ?? "N/A"} / ${response.usage?.tpm ?? "N/A"}` },
     { label: "Rate Limits", kind: vscode.QuickPickItemKind.Separator },
-    buildRateLimitItem("5h", getRateLimit(response, "5h"), config),
-    buildRateLimitItem("7d", getRateLimit(response, "7d"), config),
+    ...(rateLimits.length > 0
+      ? rateLimits.map((rateLimit) => buildRateLimitItem(rateLimit.window, rateLimit, config))
+      : [{ label: "No rate limit data available." }]),
     { label: "Usage", kind: vscode.QuickPickItemKind.Separator },
     {
       label: `Today: requests ${response.usage?.today?.requests ?? "N/A"} / cost ${formatMoney(response.usage?.today?.actual_cost ?? response.usage?.today?.cost, config)}`
@@ -171,11 +173,7 @@ function buildDetailsItems(response: UsageResponse, config: ExtensionConfig): Ac
   return items;
 }
 
-function buildRateLimitItem(window: RateLimitWindow, rateLimit: ReturnType<typeof getRateLimit>, config: ExtensionConfig): ActionQuickPickItem {
-  if (!rateLimit) {
-    return { label: `${window}: N/A` };
-  }
-
+function buildRateLimitItem(window: RateLimitWindow, rateLimit: RateLimit, config: ExtensionConfig): ActionQuickPickItem {
   return {
     label: `${window}: used ${formatMoney(rateLimit.used, config)} / limit ${formatMoney(rateLimit.limit, config)} / remaining ${formatMoney(getRemaining(rateLimit), config)}`,
     description: `reset ${rateLimit.reset_at ?? "N/A"}`,

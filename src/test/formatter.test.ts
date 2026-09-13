@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { ExtensionConfig } from "../config";
 import {
   formatMoney,
+  formatTooltip,
+  formatPlainSummary,
   formatStatusBarText,
   getRateLimit,
   getRemaining,
@@ -18,6 +20,7 @@ const baseConfig: ExtensionConfig = {
   currencySymbol: "$",
   decimals: 2,
   show5h: true,
+  show1d: true,
   show7d: true,
   placeholderText: "Sub2api Usage",
   statusBarAlignment: "right",
@@ -73,15 +76,15 @@ describe("formatter", () => {
     );
   });
 
-  it("shows N/A when 5h is missing", () => {
+  it("omits 5h when only 7d is configured", () => {
     expect(formatStatusBarText({ rate_limits: [response.rate_limits![1]] }, baseConfig)).toBe(
-      "Sub2api 5h N/A | 7d 2.20%"
+      "Sub2api 7d 2.20%"
     );
   });
 
-  it("shows N/A when 7d is missing", () => {
+  it("omits 7d when only 5h is configured", () => {
     expect(formatStatusBarText({ rate_limits: [response.rate_limits![0]] }, baseConfig)).toBe(
-      "Sub2api 5h 13.17% | 7d N/A"
+      "Sub2api 5h 13.17%"
     );
   });
 
@@ -91,7 +94,7 @@ describe("formatter", () => {
     };
 
     expect(getUsagePercent(getRateLimit(zeroLimit, "7d"))).toBeUndefined();
-    expect(formatStatusBarText(zeroLimit, baseConfig)).toBe("Sub2api 5h N/A | 7d N/A");
+    expect(formatStatusBarText(zeroLimit, baseConfig)).toBe("Sub2api 7d N/A");
   });
 
   it("formats compact mode with 7d first", () => {
@@ -135,7 +138,7 @@ describe("formatter", () => {
       rate_limits: [{ window: "5h", limit: 10, used: 9 }]
     };
 
-    expect(getThresholdPercent(fiveHourHighUsage)).toBeUndefined();
+    expect(getThresholdPercent(fiveHourHighUsage)).toBe(90);
     expect(getThresholdPercent(response)).toBeCloseTo((3.95166425 / 180) * 100, 8);
   });
 
@@ -145,5 +148,50 @@ describe("formatter", () => {
 
   it("formats missing money as N/A", () => {
     expect(formatMoney(undefined, baseConfig)).toBe("N/A");
+  });
+
+  const daily = { window: "1d", limit: 60, used: 15, remaining: 45 };
+
+  it.each([
+    ["percentage", "Sub2api 1d 25.00%"],
+    ["quota", "Sub2api 1d $15.00/$60.00"],
+    ["remaining", "Sub2api 1d $45.00 left"],
+    ["compact", "Sub2api 1d 25.00%"]
+  ] as const)("supports a daily-only key in %s mode", (displayMode, expected) => {
+    expect(formatStatusBarText({ rate_limits: [daily] }, { ...baseConfig, displayMode })).toBe(expected);
+  });
+
+  it("orders all tiers by duration regardless of response order", () => {
+    const all = { rate_limits: [response.rate_limits![1], daily, response.rate_limits![0]] };
+    expect(formatStatusBarText(all, baseConfig)).toBe("Sub2api 5h 13.17% | 1d 25.00% | 7d 2.20%");
+    expect(formatStatusBarText(all, { ...baseConfig, show1d: false })).toBe(formatStatusBarText(response, baseConfig));
+    expect(formatStatusBarText(all, { ...baseConfig, displayMode: "compact" })).toBe("Sub2api 7d 2.20%");
+    expect(formatStatusBarText(all, { ...baseConfig, displayMode: "compact", show7d: false })).toBe("Sub2api 1d 25.00%");
+    expect(formatStatusBarText(all, { ...baseConfig, show5h: false, show1d: false, show7d: false })).toBe(baseConfig.placeholderText);
+  });
+
+  it("uses 1d for thresholds only when 7d is absent", () => {
+    expect(getThresholdPercent({ rate_limits: [response.rate_limits![0], daily] })).toBe(25);
+    expect(getThresholdPercent({ rate_limits: [daily, response.rate_limits![1]] })).toBeCloseTo(2.20, 2);
+    expect(getThresholdPercent({ rate_limits: [daily, { window: "7d", limit: 0, used: 0 }] })).toBeUndefined();
+  });
+
+  it.each([{}, { rate_limits: [] }, { rate_limits: [{ window: "unknown", limit: 10, used: 1 }] }])(
+    "uses a neutral placeholder when no known windows are returned: %j", (data) => {
+      expect(formatStatusBarText(data, baseConfig)).toBe(baseConfig.placeholderText);
+      expect(formatStatusBarText(data, { ...baseConfig, displayMode: "compact" })).toBe(baseConfig.placeholderText);
+      expect(getThresholdPercent(data)).toBeUndefined();
+      expect(formatPlainSummary(data, baseConfig)).toContain("No rate limit data available.");
+    }
+  );
+
+  it("includes actual windows in tooltip and copied details even when hidden in the status bar", () => {
+    for (const format of [formatTooltip, formatPlainSummary]) {
+      const text = format({ rate_limits: [daily] }, { ...baseConfig, show1d: false });
+      expect(text).toContain("1d:");
+      expect(text).not.toContain("5h:");
+      expect(text).not.toContain("7d:");
+      expect(text).toContain("$15.00");
+    }
   });
 });
