@@ -75,6 +75,17 @@ export class UsageStatusBar implements vscode.Disposable {
     this.item.show();
   }
 
+  public showStale(response: UsageResponse, error: unknown, lastSuccessAt: Date): void {
+    this.clearThresholdColor();
+    this.item.text = `$(warning) ${formatStatusBarText(response, this.config)} (stale)`;
+    const tooltip = new vscode.MarkdownString();
+    tooltip.appendText(`Cached data — last refresh failed.\nLast successful refresh: ${lastSuccessAt.toLocaleString()}\nError: ${getErrorMessage(error)}\n\n`);
+    tooltip.appendMarkdown(formatTooltip(response, this.config));
+    tooltip.isTrusted = false;
+    this.item.tooltip = tooltip;
+    this.item.show();
+  }
+
   public dispose(): void {
     this.item.dispose();
   }

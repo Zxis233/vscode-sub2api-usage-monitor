@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import type { ExtensionConfig } from "./config";
-import { SECRET_API_KEY } from "./config";
 import {
   formatMoney,
   formatPlainSummary,
@@ -10,7 +9,7 @@ import {
 import type { RateLimit, RateLimitWindow, UsageResponse } from "./types";
 import { getErrorMessage } from "./utils";
 
-export type RefreshResult = "success" | "error" | "missingEndpoint" | "missingApiKey";
+export type RefreshResult = "success" | "error" | "missingEndpoint" | "missingApiKey" | "cancelled";
 
 export interface CommandDependencies {
   refresh: () => Promise<RefreshResult>;
@@ -18,6 +17,8 @@ export interface CommandDependencies {
   getConfig: () => ExtensionConfig;
   getLastResponse: () => UsageResponse | undefined;
   getLastError: () => unknown;
+  getLastSuccessAt: () => Date | undefined;
+  setApiKey: (key: string | undefined) => Promise<void>;
 }
 
 interface ActionQuickPickItem extends vscode.QuickPickItem {
@@ -25,7 +26,7 @@ interface ActionQuickPickItem extends vscode.QuickPickItem {
 }
 
 export function registerCommands(
-  context: vscode.ExtensionContext,
+  _context: vscode.ExtensionContext,
   dependencies: CommandDependencies
 ): vscode.Disposable[] {
   return [
@@ -37,7 +38,7 @@ export function registerCommands(
         vscode.window.showWarningMessage("Sub2api usage endpoint is not configured.");
       } else if (result === "missingApiKey") {
         vscode.window.showWarningMessage("Sub2api API key is not configured.");
-      } else {
+      } else if (result === "error") {
         vscode.window.showWarningMessage(`Sub2api usage refresh failed: ${getErrorMessage(dependencies.getLastError())}`);
       }
     }),
@@ -60,14 +61,12 @@ export function registerCommands(
         return;
       }
 
-      await context.secrets.store(SECRET_API_KEY, trimmed);
+      await dependencies.setApiKey(trimmed);
       vscode.window.showInformationMessage("Sub2api API key saved to VS Code SecretStorage.");
-      await dependencies.refresh();
     }),
     vscode.commands.registerCommand("sub2apiUsage.clearApiKey", async () => {
-      await context.secrets.delete(SECRET_API_KEY);
+      await dependencies.setApiKey(undefined);
       vscode.window.showInformationMessage("Sub2api API key removed from VS Code SecretStorage.");
-      await dependencies.refresh();
     }),
     vscode.commands.registerCommand("sub2apiUsage.showDetails", async () => {
       await showDetails(dependencies);
@@ -133,12 +132,23 @@ async function showDetails(dependencies: CommandDependencies): Promise<void> {
     return;
   }
 
-  const selected = await vscode.window.showQuickPick<ActionQuickPickItem>(buildDetailsItems(response, dependencies.getConfig()), {
+  const error = dependencies.getLastError();
+  const lastSuccessAt = dependencies.getLastSuccessAt();
+  const freshness = [
+    ...(error ? [{ label: "$(warning) Cached data — last refresh failed", description: getErrorMessage(error) }] : []),
+    { label: `Last successful refresh: ${lastSuccessAt?.toLocaleString() ?? "N/A"}` }
+  ];
+  const selected = await vscode.window.showQuickPick<ActionQuickPickItem>([...freshness, ...buildDetailsItems(response, dependencies.getConfig())], {
     title: "Sub2api Usage Monitor",
     matchOnDescription: true,
     matchOnDetail: true
   });
 
+  // A picker can remain open across an endpoint/key change or another refresh.
+  if (selected?.action === "copySummary" && response !== dependencies.getLastResponse()) {
+    vscode.window.showWarningMessage("Usage data changed. Reopen details to copy the current summary.");
+    return;
+  }
   await handleAction(selected, dependencies, response);
 }
 
@@ -211,7 +221,12 @@ async function handleAction(
     case "copySummary": {
       const data = response ?? dependencies.getLastResponse();
       if (data) {
-        const summary = formatPlainSummary(data, dependencies.getConfig());
+        const error = dependencies.getLastError();
+        const summary = [
+          ...(error ? [`Cached data — last refresh failed: ${getErrorMessage(error)}`] : []),
+          `Last successful refresh: ${dependencies.getLastSuccessAt()?.toLocaleString() ?? "N/A"}`,
+          formatPlainSummary(data, dependencies.getConfig())
+        ].join("\n");
         await vscode.env.clipboard.writeText(summary);
         vscode.window.showInformationMessage("Sub2api usage summary copied.");
       }

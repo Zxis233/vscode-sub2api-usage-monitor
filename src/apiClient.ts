@@ -5,6 +5,7 @@ export type UsageApiErrorCode =
   | "missingEndpoint"
   | "invalidEndpoint"
   | "timeout"
+  | "cancelled"
   | "unauthorized"
   | "forbidden"
   | "rateLimited"
@@ -18,6 +19,7 @@ export interface FetchUsageOptions {
   endpoint: string;
   apiKey: string;
   timeoutMs?: number;
+  signal?: AbortSignal;
 }
 
 export class UsageApiError extends Error {
@@ -39,6 +41,11 @@ export class ApiClient {
     const timeoutMs = options.timeoutMs ?? 10_000;
     const endpoint = parseUsageEndpoint(options.endpoint);
     const controller = new AbortController();
+    const abort = (): void => controller.abort();
+    options.signal?.addEventListener("abort", abort, { once: true });
+    if (options.signal?.aborted) {
+      controller.abort();
+    }
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
@@ -66,6 +73,9 @@ export class ApiClient {
 
       return normalizeUsageResponse(parsed);
     } catch (error) {
+      if (options.signal?.aborted) {
+        throw new UsageApiError("Usage API request cancelled.", "cancelled");
+      }
       if (error instanceof UsageApiError) {
         throw error;
       }
@@ -77,6 +87,7 @@ export class ApiClient {
       throw new UsageApiError(`Usage API request failed: ${error instanceof Error ? error.message : String(error)}`, "network");
     } finally {
       clearTimeout(timeout);
+      options.signal?.removeEventListener("abort", abort);
     }
   }
 }

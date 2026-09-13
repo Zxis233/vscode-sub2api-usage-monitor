@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Cancel and invalidate requests when the endpoint or API key changes, including SecretStorage changes from other windows.
+- Label cached usage as stale after refresh failures and include the last successful refresh time and error in details and copied summaries.
+- Avoid API requests for display-only configuration changes and prevent late requests from updating disposed UI.
 - Added 1d quota support and the `sub2apiUsage.show1d` setting.
 - Automatically display only returned quota windows in the status bar, tooltip, details, and copied summary.
 - Prioritize 7d, then 1d, then 5h in compact mode and for threshold alerts.

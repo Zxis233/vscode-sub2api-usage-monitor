@@ -4,6 +4,23 @@ import { ApiClient } from "../apiClient";
 describe("ApiClient endpoint validation", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it.each(["cancelled", "timeout"])("distinguishes %s requests", async (code) => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+      init.signal!.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
+    })));
+    const controller = new AbortController();
+    const request = new ApiClient().fetchUsage({
+      endpoint: "https://example.com/v1/usage", apiKey: "test", signal: controller.signal, timeoutMs: 100
+    });
+    const assertion = expect(request).rejects.toMatchObject({ code });
+    if (code === "cancelled") { controller.abort(); }
+    else { await vi.advanceTimersByTimeAsync(100); }
+    await assertion;
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("rejects missing endpoints before making a request", async () => {

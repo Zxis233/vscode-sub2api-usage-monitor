@@ -134,9 +134,11 @@ Click the status bar item or run `Sub2api Usage: Show Details` to see:
 - The token is stored only in VS Code SecretStorage, never hard-coded, and not printed to logs.
 - The endpoint is read from user settings only, so workspace settings cannot redirect the stored token.
 - Refresh requires a configured endpoint and API key. External HTTP endpoints are rejected.
-- Polling reuses an in-flight refresh promise to avoid concurrent requests.
-- Configuration changes recreate the status bar only when alignment or priority changes, restart the timer, and refresh only when auto start is enabled.
-- `deactivate` disposes commands, the status bar item, and the poll timer.
+- Polling and manual refresh share an in-flight request for the current endpoint and key. Changing either cancels the old request and clears cached data; late results cannot overwrite the new state.
+- SecretStorage changes from other VS Code windows also invalidate cached data. Set/Clear API Key refreshes immediately; external changes refresh automatically only when auto start is enabled.
+- Display setting changes redraw without an API request. Endpoint changes and enabling auto start trigger a refresh when auto start is enabled. Alignment or priority changes recreate the status bar.
+- Failed refreshes retain cached usage with a visible `stale` marker, last successful refresh time, and latest error in the tooltip, details, and copied summary. The next successful refresh clears the marker.
+- `deactivate` cancels pending requests and disposes commands, the status bar item, and the poll timer.
 
 ## Known Limits
 
