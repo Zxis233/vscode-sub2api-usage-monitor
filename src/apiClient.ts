@@ -138,9 +138,7 @@ function createHttpError(statusCode: number, body: string): UsageApiError {
 }
 
 function normalizeUsageResponse(value: unknown): UsageResponse {
-  if (!isRecord(value)) {
-    throw new UsageApiError("Usage API returned an invalid response shape.", "invalidResponse");
-  }
+  validateUsageResponse(value);
 
   return {
     daily_usage: normalizeArray(value.daily_usage, normalizeDailyUsage),
@@ -153,6 +151,53 @@ function normalizeUsageResponse(value: unknown): UsageResponse {
     status: toStringValue(value.status),
     usage: normalizeUsageSummary(value.usage)
   };
+}
+
+function validateUsageResponse(value: unknown): asserts value is Record<string, unknown> {
+  const invalid = (field: string): never => {
+    throw new UsageApiError(
+      `Usage API returned an invalid Sub2api response (${field}). Check that the endpoint points to /v1/usage.`,
+      "invalidResponse"
+    );
+  };
+
+  if (!isRecord(value)) { return invalid("root"); }
+  if (value.error !== undefined && value.error !== null) { invalid("error"); }
+  if (typeof value.isValid !== "boolean") { invalid("isValid"); }
+
+  // These fields are unconditional in the corresponding gateway handler branch.
+  // Quotas and statistics are conditional: failed best-effort queries can omit them.
+  if (value.mode === "quota_limited") {
+    if (typeof value.status !== "string" || !value.status.trim()) { invalid("status"); }
+  } else if (value.mode === "unrestricted") {
+    if (typeof value.planName !== "string") { invalid("planName"); }
+    if (typeof value.unit !== "string" || !value.unit.trim()) { invalid("unit"); }
+  } else {
+    invalid("mode");
+  }
+
+  for (const field of ["daily_usage", "model_stats", "rate_limits"] as const) {
+    const items = value[field];
+    if (items != null && (!Array.isArray(items) || !items.every(isRecord))) { invalid(field); }
+  }
+  if (value.usage != null && !isRecord(value.usage)) { invalid("usage"); }
+
+  if (Array.isArray(value.rate_limits)) {
+    const windows = new Set<string>();
+    for (const item of value.rate_limits) {
+      // Keep new window names forward-compatible, but never silently render broken quota data.
+      if (typeof item.window !== "string" || !item.window.trim() || windows.has(item.window)) {
+        invalid("rate_limits.window");
+      }
+      windows.add(item.window);
+      if (toFiniteNumber(item.limit) === undefined || item.limit <= 0) { invalid("rate_limits.limit"); }
+      if (toFiniteNumber(item.used) === undefined || item.used < 0) { invalid("rate_limits.used"); }
+      if (item.remaining != null && toFiniteNumber(item.remaining) === undefined) { invalid("rate_limits.remaining"); }
+      for (const field of ["window_start", "reset_at"] as const) {
+        if (item[field] != null && typeof item[field] !== "string") { invalid(`rate_limits.${field}`); }
+      }
+    }
+  }
 }
 
 function normalizeArray<T>(value: unknown, mapper: (item: Record<string, unknown>) => T): T[] | undefined {

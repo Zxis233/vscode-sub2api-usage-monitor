@@ -143,7 +143,9 @@ Click the status bar item or run `Sub2api Usage: Show Details` to see:
 ## Known Limits
 
 - The extension trusts the API's `remaining` field when it exists, even if it is larger than `limit - used`.
-- It performs lightweight response normalization instead of strict schema validation, so partial API responses can still render.
+- Responses must identify a supported Sub2api mode and include its fixed fields: `mode`, boolean `isValid`, and `status` for `quota_limited`, or `planName` and `unit` for `unrestricted`. Empty objects, error responses, and unrelated API envelopes are rejected.
+- Statistics and quota windows remain optional because backend queries can fail independently. Empty arrays and null optional data are accepted. Returned rate-limit entries require a unique window name, a positive numeric limit, and nonnegative numeric usage; nullable window timestamps are supported. Unknown fields and future window names remain compatible.
+- Validation identifies the response format; it does not mean a key can make billable requests. In particular, expired and exhausted keys can still return valid usage responses.
 - Network failures are shown in the status bar and details view; the next poll can recover automatically.
 
 ## Development

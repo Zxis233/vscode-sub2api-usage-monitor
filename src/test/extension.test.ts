@@ -58,7 +58,7 @@ function deferred<T>() {
 }
 
 const usage = (used: number) => new Response(JSON.stringify({
-  mode: "quota_limited", rate_limits: [{ window: "7d", limit: 100, used }]
+  mode: "quota_limited", status: "active", isValid: true, rate_limits: [{ window: "7d", limit: 100, used }]
 }), { status: 200 });
 const flush = async () => { for (let i = 0; i < 20; i++) { await Promise.resolve(); } };
 const command = (name: string) => host.commands.get(`sub2apiUsage.${name}`)!();

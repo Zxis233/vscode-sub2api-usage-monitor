@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
+- Validate Sub2api response identity and returned quota windows; reject empty/error JSON while accepting missing statistics and null window start times.
 - Cancel and invalidate requests when the endpoint or API key changes, including SecretStorage changes from other windows.
 - Label cached usage as stale after refresh failures and include the last successful refresh time and error in details and copied summaries.
 - Avoid API requests for display-only configuration changes and prevent late requests from updating disposed UI.

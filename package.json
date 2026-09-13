@@ -2,7 +2,7 @@
   "name": "sub2api-usage-monitor",
   "displayName": "Sub2api Usage Monitor",
   "description": "Show Sub2api relay API usage and quota information in the VS Code status bar.",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "publisher": "Esing",
   "author": "Esing",
   "license": "MIT",
