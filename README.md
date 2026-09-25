@@ -98,6 +98,8 @@ Example custom status label:
 
 ## Display Behavior
 
+For keys with a total `quota` and no returned rate-limit windows, the status bar shows `Total`: percentage in percentage/compact mode, used/limit in quota mode, and remaining in remaining mode. Threshold alerts also use total quota in this case. Values come from `quota`, not cumulative usage costs. Total quota is always included in tooltip, details, and copied summaries when present. If windows are returned, existing window selection and visibility settings retain priority; hiding windows does not activate the total-quota fallback.
+
 The extension reads `rate_limits` by `window`:
 
 - `window === "5h"` is treated as the 5h quota.
@@ -105,7 +107,7 @@ The extension reads `rate_limits` by `window`:
 - `window === "7d"` is treated as the 7d quota.
 - Only returned windows are displayed, ordered 5h, 1d, 7d. A 7d-only key shows only 7d; a 5h/7d key shows both.
 - `sub2apiUsage.show5h`, `sub2apiUsage.show1d`, and `sub2apiUsage.show7d` can independently hide each window in the status bar.
-- Compact mode shows the highest enabled, available tier: 7d, then 1d, then 5h.
+- Compact mode uses `sub2apiUsage.compactPriority`: `shortestFirst` (default) selects 5h, then 1d, then 7d; `longestFirst` selects 7d, then 1d, then 5h. Missing or hidden windows are skipped. This setting does not affect threshold alerts.
 - If no returned windows are enabled, the status bar shows `sub2apiUsage.placeholderText`. Missing window data does not imply unlimited quota.
 - Tooltip, details, and copied summaries list all returned known windows, regardless of status bar visibility settings.
 - `sub2apiUsage.statusLabel` controls the prefix in displays such as `Relay A 7d 2.20%`.

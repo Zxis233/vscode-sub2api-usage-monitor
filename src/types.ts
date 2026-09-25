@@ -1,4 +1,5 @@
 export interface UsageResponse {
+  quota?: { limit: number; used: number; remaining?: number; unit?: string };
   daily_usage?: DailyUsage[];
   days_until_expiry?: number;
   expires_at?: string;

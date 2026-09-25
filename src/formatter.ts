@@ -55,6 +55,9 @@ export function formatPercent(value: number | undefined, config: ExtensionConfig
 }
 
 export function formatStatusBarText(response: UsageResponse, config: ExtensionConfig): string {
+  if (!response.rate_limits?.length && response.quota) {
+    return `${formatStatusLabel(config.statusLabel)} ${formatWindowStatus("Total", response.quota, config)}`;
+  }
   const visible = getAvailableRateLimits(response).filter((rateLimit) => {
     switch (rateLimit.window) {
       case "5h": return config.show5h;
@@ -62,7 +65,9 @@ export function formatStatusBarText(response: UsageResponse, config: ExtensionCo
       case "7d": return config.show7d;
     }
   });
-  const selected = config.displayMode === "compact" ? visible.slice(-1) : visible;
+  const selected = config.displayMode === "compact"
+    ? (config.compactPriority === "longestFirst" ? visible.slice(-1) : visible.slice(0, 1))
+    : visible;
   const parts = selected.map((rateLimit) => formatWindowStatus(rateLimit.window, rateLimit, config));
 
   return parts.length > 0 ? `${formatStatusLabel(config.statusLabel)} ${parts.join(" | ")}` : config.placeholderText;
@@ -81,6 +86,7 @@ export function formatTooltip(response: UsageResponse, config: ExtensionConfig):
     `- Total Cost: ${formatMoney(response.usage?.total?.actual_cost ?? response.usage?.total?.cost, config)}`,
     "",
     "#### Rate Limits",
+    ...(response.quota ? [formatTotalQuota(response, config)] : []),
     ...formatAvailableRateLimits(response, config, formatRateLimitTooltip),
     "",
     "#### Models"
@@ -108,6 +114,7 @@ export function formatDetailsLines(response: UsageResponse, config: ExtensionCon
     `Days Until Expiry: ${formatPlainNumber(response.days_until_expiry)}`,
     "",
     ...formatAvailableRateLimits(response, config, formatRateLimitDetail),
+    ...(response.quota ? [formatTotalQuota(response, config)] : []),
     "",
     `Today: requests ${formatPlainNumber(response.usage?.today?.requests)} / cost ${formatMoney(response.usage?.today?.actual_cost ?? response.usage?.today?.cost, config)}`,
     `Total: requests ${formatPlainNumber(response.usage?.total?.requests)} / cost ${formatMoney(response.usage?.total?.actual_cost ?? response.usage?.total?.cost, config)}`,
@@ -135,7 +142,12 @@ export function formatPlainSummary(response: UsageResponse, config: ExtensionCon
 
 export function getThresholdPercent(response: UsageResponse): number | undefined {
   const available = getAvailableRateLimits(response);
-  return getUsagePercent(available[available.length - 1]);
+  return getUsagePercent(available[available.length - 1] ?? (!response.rate_limits?.length ? response.quota : undefined));
+}
+
+export function formatTotalQuota(response: UsageResponse, config: ExtensionConfig): string {
+  const quota = response.quota;
+  return `Total quota: used ${formatMoney(quota?.used, config)} / limit ${formatMoney(quota?.limit, config)} / remaining ${formatMoney(getRemaining(quota), config)}`;
 }
 
 function formatAvailableRateLimits(
@@ -146,10 +158,10 @@ function formatAvailableRateLimits(
   const available = getAvailableRateLimits(response);
   return available.length > 0
     ? available.map((rateLimit) => formatter(rateLimit.window, rateLimit, config))
-    : ["No rate limit data available."];
+    : (response.quota ? [] : ["No rate limit data available."]);
 }
 
-function formatWindowStatus(window: RateLimitWindow, rateLimit: RateLimit | undefined, config: ExtensionConfig): string {
+function formatWindowStatus(window: RateLimitWindow | "Total", rateLimit: RateLimit | undefined, config: ExtensionConfig): string {
   if (!rateLimit) {
     return `${window} N/A`;
   }

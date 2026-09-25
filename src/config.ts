@@ -12,6 +12,7 @@ export interface ExtensionConfig {
   endpoint: string;
   pollIntervalSeconds: number;
   displayMode: DisplayMode;
+  compactPriority: "shortestFirst" | "longestFirst";
   statusLabel: string;
   currencySymbol: string;
   decimals: number;
@@ -59,6 +60,7 @@ export function getExtensionConfig(): ExtensionConfig {
     endpoint: normalizeEndpoint(getGlobalSetting(config, "endpoint", DEFAULT_ENDPOINT)),
     pollIntervalSeconds,
     displayMode: normalizeDisplayMode(config.get<string>("displayMode", "percentage")),
+    compactPriority: config.get<string>("compactPriority") === "longestFirst" ? "longestFirst" : "shortestFirst",
     statusLabel: normalizeStatusLabel(config.get<string>("statusLabel", "Sub2api")),
     currencySymbol: config.get<string>("currencySymbol", "$"),
     decimals,

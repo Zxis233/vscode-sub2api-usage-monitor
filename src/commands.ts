@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import type { ExtensionConfig } from "./config";
 import {
+  formatTotalQuota,
   formatMoney,
   formatPlainSummary,
   getAvailableRateLimits,
@@ -162,9 +163,10 @@ function buildDetailsItems(response: UsageResponse, config: ExtensionConfig): Ac
     { label: `Days Until Expiry: ${response.days_until_expiry ?? "N/A"}` },
     { label: `RPM / TPM: ${response.usage?.rpm ?? "N/A"} / ${response.usage?.tpm ?? "N/A"}` },
     { label: "Rate Limits", kind: vscode.QuickPickItemKind.Separator },
+    ...(response.quota ? [{ label: formatTotalQuota(response, config) }] : []),
     ...(rateLimits.length > 0
       ? rateLimits.map((rateLimit) => buildRateLimitItem(rateLimit.window, rateLimit, config))
-      : [{ label: "No rate limit data available." }]),
+      : (response.quota ? [] : [{ label: "No rate limit data available." }])),
     { label: "Usage", kind: vscode.QuickPickItemKind.Separator },
     {
       label: `Today: requests ${response.usage?.today?.requests ?? "N/A"} / cost ${formatMoney(response.usage?.today?.actual_cost ?? response.usage?.today?.cost, config)}`

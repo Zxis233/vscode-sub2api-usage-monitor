@@ -2,7 +2,7 @@
   "name": "sub2api-usage-monitor",
   "displayName": "Sub2api Usage Monitor",
   "description": "Show Sub2api relay API usage and quota information in the VS Code status bar.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "Esing",
   "author": "Esing",
   "license": "MIT",
@@ -97,6 +97,20 @@
           "default": "percentage",
           "order": 30,
           "description": "Status bar display mode."
+        },
+        "sub2apiUsage.compactPriority": {
+          "type": "string",
+          "enum": [
+            "shortestFirst",
+            "longestFirst"
+          ],
+          "enumDescriptions": [
+            "5h → 1d → 7d",
+            "7d → 1d → 5h"
+          ],
+          "default": "shortestFirst",
+          "order": 35,
+          "description": "Window priority in compact mode. Skips unavailable or hidden windows. Does not affect threshold alerts."
         },
         "sub2apiUsage.currencySymbol": {
           "type": "string",
@@ -218,7 +232,7 @@
     "@eslint/js": "^9.29.0",
     "@types/node": "^20.17.0",
     "@types/vscode": "^1.90.0",
-    "@vscode/vsce": "^3.6.0",
+    "@vscode/vsce": "^4.0.0",
     "eslint": "^9.29.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.34.1",

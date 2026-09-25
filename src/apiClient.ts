@@ -141,6 +141,12 @@ function normalizeUsageResponse(value: unknown): UsageResponse {
   validateUsageResponse(value);
 
   return {
+    quota: isRecord(value.quota) ? {
+      limit: value.quota.limit as number,
+      used: value.quota.used as number,
+      remaining: toFiniteNumber(value.quota.remaining),
+      unit: toStringValue(value.quota.unit)
+    } : undefined,
     daily_usage: normalizeArray(value.daily_usage, normalizeDailyUsage),
     days_until_expiry: toFiniteNumber(value.days_until_expiry),
     expires_at: toStringValue(value.expires_at),
@@ -181,6 +187,14 @@ function validateUsageResponse(value: unknown): asserts value is Record<string, 
     if (items != null && (!Array.isArray(items) || !items.every(isRecord))) { invalid(field); }
   }
   if (value.usage != null && !isRecord(value.usage)) { invalid("usage"); }
+  if (value.quota != null) {
+    const quota = value.quota;
+    if (!isRecord(quota)) { return invalid("quota"); }
+    if (typeof quota.limit !== "number" || !Number.isFinite(quota.limit) || quota.limit <= 0) { invalid("quota.limit"); }
+    if (typeof quota.used !== "number" || !Number.isFinite(quota.used) || quota.used < 0) { invalid("quota.used"); }
+    if (quota.remaining != null && toFiniteNumber(quota.remaining) === undefined) { invalid("quota.remaining"); }
+    if (quota.unit != null && typeof quota.unit !== "string") { invalid("quota.unit"); }
+  }
 
   if (Array.isArray(value.rate_limits)) {
     const windows = new Set<string>();

@@ -72,6 +72,18 @@ describe("ApiClient endpoint validation", () => {
     return new ApiClient().fetchUsage({ endpoint: "https://example.com/v1/usage", apiKey: "test" });
   };
 
+  it("preserves total quota independently of billed usage statistics", async () => {
+    const quota = { limit: 1000, used: 133.57790692, remaining: 866.42209308, unit: "USD" };
+    const result = await fetchBody({ ...limited, quota, usage: { total: { actual_cost: 133.75937692 } } });
+    expect(result.quota).toEqual(quota);
+    expect(result.rate_limits).toBeUndefined();
+  });
+
+  it.each([[], {}, { limit: 0, used: 0 }, { limit: 100, used: "10" }, { limit: 100, used: -1 },
+    { limit: 100, used: 10, remaining: "90" }])("rejects malformed total quota: %j", async (quota) => {
+    await expect(fetchBody({ ...limited, quota })).rejects.toMatchObject({ code: "invalidResponse" });
+  });
+
   it("accepts the zero-usage 7d response with null window start", async () => {
     const counters = {
       actual_cost: 0, cache_creation_tokens: 0, cache_read_tokens: 0, cost: 0,

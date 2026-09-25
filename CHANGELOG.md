@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+
+- Fixed total-quota-only API keys showing placeholder text: preserve and validate `quota`, and show total percentage, used/limit, or remaining according to the display mode when no rate-limit windows are returned.
+- Show total quota in tooltips, details, and copied summaries, and use its percentage for threshold alerts when no rate-limit windows are returned. Calculations use `quota.used`, not usage statistics.
+- Added `sub2apiUsage.compactPriority`: compact mode defaults to 5h → 1d → 7d, with an option for 7d → 1d → 5h. Threshold alerts retain 7d → 1d → 5h priority.
+
 ## 0.4.0
 
 - Validate Sub2api response identity and returned quota windows; reject empty/error JSON while accepting missing statistics and null window start times.
