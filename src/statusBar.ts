@@ -1,7 +1,11 @@
 import * as vscode from "vscode";
 import type { ExtensionConfig } from "./config";
 import { toStatusBarAlignment } from "./config";
-import { formatStatusBarText, formatTooltip, getThresholdPercent } from "./formatter";
+import {
+  formatStatusBarText,
+  formatTooltip,
+  getThresholdPercent,
+} from "./formatter";
 import type { UsageResponse } from "./types";
 import { getErrorMessage } from "./utils";
 
@@ -30,21 +34,24 @@ export class UsageStatusBar implements vscode.Disposable {
   public showUnconfigured(): void {
     this.clearThresholdColor();
     this.item.text = "$(key) Sub2api Usage: Set token";
-    this.item.tooltip = "No API key configured. Run Sub2api Usage: Set API Key to store it in VS Code SecretStorage.";
+    this.item.tooltip =
+      "No API key configured. Run Sub2api Usage: Set API Key to store it in VS Code SecretStorage.";
     this.item.show();
   }
 
   public showMissingEndpoint(): void {
     this.clearThresholdColor();
     this.item.text = "$(gear) Sub2api Usage: Set endpoint";
-    this.item.tooltip = "No usage endpoint configured. Open Sub2api Usage Monitor settings to set sub2apiUsage.endpoint.";
+    this.item.tooltip =
+      "No usage endpoint configured. Open Sub2api Usage Monitor settings to set sub2apiUsage.endpoint.";
     this.item.show();
   }
 
   public showIdle(): void {
     this.clearThresholdColor();
     this.item.text = "$(pulse) Sub2api Usage: Ready";
-    this.item.tooltip = "Sub2api Usage Monitor is ready. Run Sub2api Usage: Refresh to query usage.";
+    this.item.tooltip =
+      "Sub2api Usage Monitor is ready. Run Sub2api Usage: Refresh to query usage.";
     this.item.show();
   }
 
@@ -65,7 +72,10 @@ export class UsageStatusBar implements vscode.Disposable {
 
   public showUsage(response: UsageResponse): void {
     const icon = this.getStatusIcon(response);
-    const tooltip = new vscode.MarkdownString(formatTooltip(response, this.config), true);
+    const tooltip = new vscode.MarkdownString(
+      formatTooltip(response, this.config),
+      true,
+    );
     tooltip.isTrusted = false;
     tooltip.supportThemeIcons = true;
 
@@ -75,11 +85,17 @@ export class UsageStatusBar implements vscode.Disposable {
     this.item.show();
   }
 
-  public showStale(response: UsageResponse, error: unknown, lastSuccessAt: Date): void {
+  public showStale(
+    response: UsageResponse,
+    error: unknown,
+    lastSuccessAt: Date,
+  ): void {
     this.clearThresholdColor();
     this.item.text = `$(warning) ${formatStatusBarText(response, this.config)} (stale)`;
     const tooltip = new vscode.MarkdownString();
-    tooltip.appendText(`Cached data — last refresh failed.\nLast successful refresh: ${lastSuccessAt.toLocaleString()}\nError: ${getErrorMessage(error)}\n\n`);
+    tooltip.appendText(
+      `Cached data — last refresh failed.\nLast successful refresh: ${lastSuccessAt.toLocaleString()}\nError: ${getErrorMessage(error)}\n\n`,
+    );
     tooltip.appendMarkdown(formatTooltip(response, this.config));
     tooltip.isTrusted = false;
     this.item.tooltip = tooltip;
@@ -93,7 +109,7 @@ export class UsageStatusBar implements vscode.Disposable {
   private createItem(config: ExtensionConfig): vscode.StatusBarItem {
     const item = vscode.window.createStatusBarItem(
       toStatusBarAlignment(config.statusBarAlignment),
-      config.statusBarPriority
+      config.statusBarPriority,
     );
     item.name = "Sub2api Usage Monitor";
     item.command = "sub2apiUsage.showDetails";
@@ -132,12 +148,16 @@ export class UsageStatusBar implements vscode.Disposable {
     }
 
     if (percent >= this.config.dangerThresholdPercent) {
-      this.item.backgroundColor = new vscode.ThemeColor(this.config.dangerThresholdColor);
+      this.item.backgroundColor = new vscode.ThemeColor(
+        this.config.dangerThresholdColor,
+      );
       return;
     }
 
     if (percent >= this.config.warnThresholdPercent) {
-      this.item.backgroundColor = new vscode.ThemeColor(this.config.warnThresholdColor);
+      this.item.backgroundColor = new vscode.ThemeColor(
+        this.config.warnThresholdColor,
+      );
     }
   }
 

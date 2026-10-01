@@ -66,6 +66,7 @@ Token:
 - `sub2apiUsage.show5h`: show the 5h window.
 - `sub2apiUsage.show1d`: show the 1d window when returned by the API. Default `true`.
 - `sub2apiUsage.show7d`: show the 7d window.
+- `sub2apiUsage.visibleModels`: model names to include in historical usage details, tooltips, and copied summaries. Default `[]` shows all models. Names match exactly and are case-sensitive; surrounding spaces are ignored.
 - `sub2apiUsage.placeholderText`: status bar text shown when no available windows are enabled for display.
 - `sub2apiUsage.statusBarAlignment`: `left` or `right`.
 - `sub2apiUsage.statusBarPriority`: status bar priority.
@@ -95,6 +96,22 @@ Example custom status label:
   "sub2apiUsage.statusLabel": "Relay A"
 }
 ```
+
+Configure model visibility in the Settings editor:
+
+1. Run `Sub2api Usage: Open Settings` and find **Visible Models**, or search for `sub2apiUsage.visibleModels` in Settings.
+2. Click **Add Item** and enter one complete model name per entry. Existing entries can be edited or removed.
+3. Leave the list empty to disable filtering and show all models.
+
+Alternatively, configure the same list in `settings.json`:
+
+```json
+{
+  "sub2apiUsage.visibleModels": ["gpt-6-astra", "gpt-6-sol"]
+}
+```
+
+Only matching models returned by the API are shown, preserving their original order and historical statistics. If none match, the Models section shows `N/A`. This filter does not change overall today/total usage or quota values. Set it to `[]` to show all models again. Saving the setting updates the tooltip immediately; reopen details to see the updated list. No additional API request is needed.
 
 ## Display Behavior
 

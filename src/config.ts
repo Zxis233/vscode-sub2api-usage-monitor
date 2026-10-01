@@ -6,7 +6,8 @@ export const SECRET_API_KEY = "sub2apiUsage.apiKey";
 
 export type DisplayMode = "percentage" | "quota" | "remaining" | "compact";
 export type StatusBarSide = "left" | "right";
-export type ThresholdColor = "statusBarItem.warningBackground" | "statusBarItem.errorBackground";
+export type ThresholdColor =
+  "statusBarItem.warningBackground" | "statusBarItem.errorBackground";
 
 export interface ExtensionConfig {
   endpoint: string;
@@ -19,6 +20,7 @@ export interface ExtensionConfig {
   show5h: boolean;
   show1d: boolean;
   show7d: boolean;
+  visibleModels: string[];
   placeholderText: string;
   statusBarAlignment: StatusBarSide;
   statusBarPriority: number;
@@ -53,67 +55,99 @@ export function getExtensionConfig(): ExtensionConfig {
   const pollIntervalSeconds = clampNumber(
     config.get<number>("pollIntervalSeconds", 300),
     MIN_POLL_INTERVAL_SECONDS,
-    MAX_POLL_INTERVAL_SECONDS
+    MAX_POLL_INTERVAL_SECONDS,
   );
 
   return {
-    endpoint: normalizeEndpoint(getGlobalSetting(config, "endpoint", DEFAULT_ENDPOINT)),
+    endpoint: normalizeEndpoint(
+      getGlobalSetting(config, "endpoint", DEFAULT_ENDPOINT),
+    ),
     pollIntervalSeconds,
-    displayMode: normalizeDisplayMode(config.get<string>("displayMode", "percentage")),
-    compactPriority: config.get<string>("compactPriority") === "longestFirst" ? "longestFirst" : "shortestFirst",
-    statusLabel: normalizeStatusLabel(config.get<string>("statusLabel", "Sub2api")),
+    displayMode: normalizeDisplayMode(
+      config.get<string>("displayMode", "percentage"),
+    ),
+    compactPriority:
+      config.get<string>("compactPriority") === "longestFirst"
+        ? "longestFirst"
+        : "shortestFirst",
+    statusLabel: normalizeStatusLabel(
+      config.get<string>("statusLabel", "Sub2api"),
+    ),
     currencySymbol: config.get<string>("currencySymbol", "$"),
     decimals,
     show5h: config.get<boolean>("show5h", true),
     show1d: config.get<boolean>("show1d", true),
     show7d: config.get<boolean>("show7d", true),
-    placeholderText: normalizePlaceholderText(config.get<string>("placeholderText", "Sub2api Usage")),
-    statusBarAlignment: normalizeStatusBarAlignment(config.get<string>("statusBarAlignment", "right")),
+    visibleModels: normalizeVisibleModels(
+      config.get<unknown>("visibleModels", []),
+    ),
+    placeholderText: normalizePlaceholderText(
+      config.get<string>("placeholderText", "Sub2api Usage"),
+    ),
+    statusBarAlignment: normalizeStatusBarAlignment(
+      config.get<string>("statusBarAlignment", "right"),
+    ),
     statusBarPriority: config.get<number>("statusBarPriority", 100),
     warnThresholdPercent: clampNumber(
-      getSettingWithLegacy(config, WARN_THRESHOLD_PERCENT_KEY, LEGACY_WARN_THRESHOLD_PERCENT_KEY, 80),
+      getSettingWithLegacy(
+        config,
+        WARN_THRESHOLD_PERCENT_KEY,
+        LEGACY_WARN_THRESHOLD_PERCENT_KEY,
+        80,
+      ),
       0,
-      100
+      100,
     ),
     dangerThresholdPercent: clampNumber(
-      getSettingWithLegacy(config, DANGER_THRESHOLD_PERCENT_KEY, LEGACY_DANGER_THRESHOLD_PERCENT_KEY, 95),
+      getSettingWithLegacy(
+        config,
+        DANGER_THRESHOLD_PERCENT_KEY,
+        LEGACY_DANGER_THRESHOLD_PERCENT_KEY,
+        95,
+      ),
       0,
-      100
+      100,
     ),
     enableThresholdColors: getSettingWithLegacy(
       config,
       ENABLE_THRESHOLD_COLORS_KEY,
       LEGACY_ENABLE_THRESHOLD_COLORS_KEY,
-      true
+      true,
     ),
     warnThresholdColor: normalizeThresholdColor(
       getSettingWithLegacy(
         config,
         WARN_THRESHOLD_COLOR_KEY,
         LEGACY_WARN_THRESHOLD_COLOR_KEY,
-        DEFAULT_WARN_THRESHOLD_COLOR
+        DEFAULT_WARN_THRESHOLD_COLOR,
       ),
-      DEFAULT_WARN_THRESHOLD_COLOR
+      DEFAULT_WARN_THRESHOLD_COLOR,
     ),
     dangerThresholdColor: normalizeThresholdColor(
       getSettingWithLegacy(
         config,
         DANGER_THRESHOLD_COLOR_KEY,
         LEGACY_DANGER_THRESHOLD_COLOR_KEY,
-        DEFAULT_DANGER_THRESHOLD_COLOR
+        DEFAULT_DANGER_THRESHOLD_COLOR,
       ),
-      DEFAULT_DANGER_THRESHOLD_COLOR
+      DEFAULT_DANGER_THRESHOLD_COLOR,
     ),
-    autoStart: config.get<boolean>("autoStart", true)
+    autoStart: config.get<boolean>("autoStart", true),
   };
 }
 
-export function affectsExtensionConfig(event: vscode.ConfigurationChangeEvent): boolean {
+export function affectsExtensionConfig(
+  event: vscode.ConfigurationChangeEvent,
+): boolean {
   return event.affectsConfiguration(CONFIG_SECTION);
 }
 
-export function toStatusBarAlignment(side: StatusBarSide): vscode.StatusBarAlignment {
-  return side === "left" ? vscode.StatusBarAlignment.Left : vscode.StatusBarAlignment.Right;
+export function toStatusBarAlignment(
+  side: StatusBarSide,
+): vscode.StatusBarAlignment {
+  return side === "left"
+    ? vscode.StatusBarAlignment.Left
+    : vscode.StatusBarAlignment.Right;
 }
 
 function normalizeDisplayMode(value: string): DisplayMode {
@@ -132,8 +166,14 @@ function normalizeStatusLabel(value: string): string {
   return value.trim() ? value : "Sub2api";
 }
 
-function normalizeThresholdColor(value: string, fallback: ThresholdColor): ThresholdColor {
-  if (value === "statusBarItem.warningBackground" || value === "statusBarItem.errorBackground") {
+function normalizeThresholdColor(
+  value: string,
+  fallback: ThresholdColor,
+): ThresholdColor {
+  if (
+    value === "statusBarItem.warningBackground" ||
+    value === "statusBarItem.errorBackground"
+  ) {
     return value;
   }
 
@@ -144,6 +184,21 @@ function normalizePlaceholderText(value: string): string {
   return value.trim() || "Sub2api Usage";
 }
 
+function normalizeVisibleModels(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      value
+        .filter((name): name is string => typeof name === "string")
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0),
+    ),
+  ];
+}
+
 function normalizeEndpoint(value: string): string {
   return value.trim();
 }
@@ -152,7 +207,7 @@ function getSettingWithLegacy<T>(
   config: vscode.WorkspaceConfiguration,
   key: string,
   legacyKey: string,
-  fallback: T
+  fallback: T,
 ): T {
   if (hasConfiguredSetting(config, key)) {
     return config.get<T>(key, fallback);
@@ -165,21 +220,28 @@ function getSettingWithLegacy<T>(
   return config.get<T>(key, fallback);
 }
 
-function hasConfiguredSetting(config: vscode.WorkspaceConfiguration, key: string): boolean {
+function hasConfiguredSetting(
+  config: vscode.WorkspaceConfiguration,
+  key: string,
+): boolean {
   const inspected = config.inspect(key);
 
   return Boolean(
     inspected &&
-      (inspected.globalValue !== undefined ||
-        inspected.workspaceValue !== undefined ||
-        inspected.workspaceFolderValue !== undefined ||
-        inspected.globalLanguageValue !== undefined ||
-        inspected.workspaceLanguageValue !== undefined ||
-        inspected.workspaceFolderLanguageValue !== undefined)
+    (inspected.globalValue !== undefined ||
+      inspected.workspaceValue !== undefined ||
+      inspected.workspaceFolderValue !== undefined ||
+      inspected.globalLanguageValue !== undefined ||
+      inspected.workspaceLanguageValue !== undefined ||
+      inspected.workspaceFolderLanguageValue !== undefined),
   );
 }
 
-function getGlobalSetting<T>(config: vscode.WorkspaceConfiguration, key: string, fallback: T): T {
+function getGlobalSetting<T>(
+  config: vscode.WorkspaceConfiguration,
+  key: string,
+  fallback: T,
+): T {
   const inspected = config.inspect<T>(key);
   return inspected?.globalValue ?? inspected?.defaultValue ?? fallback;
 }

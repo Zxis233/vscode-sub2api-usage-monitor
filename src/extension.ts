@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 import { ApiClient } from "./apiClient";
-import { affectsExtensionConfig, getExtensionConfig, SECRET_API_KEY, type ExtensionConfig } from "./config";
+import {
+  affectsExtensionConfig,
+  getExtensionConfig,
+  SECRET_API_KEY,
+  type ExtensionConfig,
+} from "./config";
 import { registerCommands, type RefreshResult } from "./commands";
 import { UsageStatusBar } from "./statusBar";
 import type { UsageResponse } from "./types";
@@ -46,7 +51,7 @@ class UsageController implements vscode.Disposable {
         getLastResponse: () => this.lastResponse,
         getLastError: () => this.lastError,
         getLastSuccessAt: () => this.lastSuccessAt,
-        setApiKey: (key) => this.setApiKey(key)
+        setApiKey: (key) => this.setApiKey(key),
       }),
       vscode.workspace.onDidChangeConfiguration((event) => {
         if (affectsExtensionConfig(event)) {
@@ -54,7 +59,11 @@ class UsageController implements vscode.Disposable {
         }
       }),
       context.secrets.onDidChange((event) => {
-        if (event.key === SECRET_API_KEY && !this.changingKey && !this.disposed) {
+        if (
+          event.key === SECRET_API_KEY &&
+          !this.changingKey &&
+          !this.disposed
+        ) {
           this.invalidateIdentity();
           if (this.config.autoStart) {
             void this.refresh();
@@ -62,7 +71,7 @@ class UsageController implements vscode.Disposable {
             void this.renderInitialState();
           }
         }
-      })
+      }),
     );
   }
 
@@ -92,7 +101,9 @@ class UsageController implements vscode.Disposable {
 
   private async renderInitialState(): Promise<void> {
     const generation = this.generation;
-    if (this.disposed) { return; }
+    if (this.disposed) {
+      return;
+    }
     if (!this.config.endpoint) {
       this.statusBar.showMissingEndpoint();
       return;
@@ -109,7 +120,9 @@ class UsageController implements vscode.Disposable {
       }
       return;
     }
-    if (!this.isCurrent(generation)) { return; }
+    if (!this.isCurrent(generation)) {
+      return;
+    }
     if (!apiKey) {
       this.statusBar.showUnconfigured();
       return;
@@ -119,7 +132,9 @@ class UsageController implements vscode.Disposable {
   }
 
   private refresh(): Promise<RefreshResult> {
-    if (this.disposed || this.changingKey) { return Promise.resolve("cancelled"); }
+    if (this.disposed || this.changingKey) {
+      return Promise.resolve("cancelled");
+    }
     if (this.refreshPromise) {
       return this.refreshPromise;
     }
@@ -127,7 +142,11 @@ class UsageController implements vscode.Disposable {
     const generation = ++this.generation;
     const controller = new AbortController();
     this.requestController = controller;
-    const promise = this.doRefresh(generation, this.config.endpoint, controller.signal).finally(() => {
+    const promise = this.doRefresh(
+      generation,
+      this.config.endpoint,
+      controller.signal,
+    ).finally(() => {
       if (this.refreshPromise === promise) {
         this.refreshPromise = undefined;
         this.requestController = undefined;
@@ -138,7 +157,11 @@ class UsageController implements vscode.Disposable {
     return this.refreshPromise;
   }
 
-  private async doRefresh(generation: number, endpoint: string, signal: AbortSignal): Promise<RefreshResult> {
+  private async doRefresh(
+    generation: number,
+    endpoint: string,
+    signal: AbortSignal,
+  ): Promise<RefreshResult> {
     if (!endpoint) {
       this.lastResponse = undefined;
       this.lastError = undefined;
@@ -149,7 +172,9 @@ class UsageController implements vscode.Disposable {
 
     try {
       const apiKey = await this.resolveApiKey();
-      if (!this.isCurrent(generation)) { return "cancelled"; }
+      if (!this.isCurrent(generation)) {
+        return "cancelled";
+      }
       if (!apiKey) {
         this.lastResponse = undefined;
         this.lastError = undefined;
@@ -163,17 +188,21 @@ class UsageController implements vscode.Disposable {
       const response = await this.apiClient.fetchUsage({
         endpoint,
         apiKey,
-        signal
+        signal,
       });
 
-      if (!this.isCurrent(generation)) { return "cancelled"; }
+      if (!this.isCurrent(generation)) {
+        return "cancelled";
+      }
       this.lastResponse = response;
       this.lastError = undefined;
       this.lastSuccessAt = new Date();
       this.statusBar.showUsage(response);
       return "success";
     } catch (error) {
-      if (!this.isCurrent(generation)) { return "cancelled"; }
+      if (!this.isCurrent(generation)) {
+        return "cancelled";
+      }
       this.lastError = error;
       this.renderLastState();
       return "error";
@@ -181,16 +210,22 @@ class UsageController implements vscode.Disposable {
   }
 
   private async resolveApiKey(): Promise<string | undefined> {
-    const secretApiKey = (await this.context.secrets.get(SECRET_API_KEY))?.trim();
+    const secretApiKey = (
+      await this.context.secrets.get(SECRET_API_KEY)
+    )?.trim();
     return secretApiKey || undefined;
   }
 
   private handleConfigChanged(): void {
-    if (this.disposed) { return; }
+    if (this.disposed) {
+      return;
+    }
     const previous = this.config;
     this.config = getExtensionConfig();
     const endpointChanged = previous.endpoint !== this.config.endpoint;
-    if (endpointChanged) { this.invalidateIdentity(); }
+    if (endpointChanged) {
+      this.invalidateIdentity();
+    }
     this.statusBar.updateConfig(this.config);
     this.renderLastState();
     this.restartPollTimer();
@@ -201,10 +236,16 @@ class UsageController implements vscode.Disposable {
   }
 
   private renderLastState(): void {
-    if (this.disposed) { return; }
+    if (this.disposed) {
+      return;
+    }
     if (this.lastError) {
       if (this.lastResponse && this.lastSuccessAt) {
-        this.statusBar.showStale(this.lastResponse, this.lastError, this.lastSuccessAt);
+        this.statusBar.showStale(
+          this.lastResponse,
+          this.lastError,
+          this.lastSuccessAt,
+        );
       } else {
         this.statusBar.showError(this.lastError);
       }
@@ -238,9 +279,13 @@ class UsageController implements vscode.Disposable {
   }
 
   private async setApiKey(key: string | undefined): Promise<void> {
-    if (this.disposed) { return; }
+    if (this.disposed) {
+      return;
+    }
     if (this.changingKey) {
-      throw new Error("An API key update is already in progress. Try again after it finishes.");
+      throw new Error(
+        "An API key update is already in progress. Try again after it finishes.",
+      );
     }
     this.changingKey = true;
     this.invalidateIdentity();

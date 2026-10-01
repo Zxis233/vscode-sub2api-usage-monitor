@@ -8,44 +8,57 @@ const host = vi.hoisted(() => ({
   secretChanged: undefined as undefined | ((event: { key: string }) => void),
   key: "key-a" as string | undefined,
   get: vi.fn(),
-  item: { text: "", tooltip: undefined as unknown, show: vi.fn(), dispose: vi.fn() },
+  item: {
+    text: "",
+    tooltip: undefined as unknown,
+    show: vi.fn(),
+    dispose: vi.fn(),
+  },
   pick: vi.fn(),
   info: vi.fn(),
-  warning: vi.fn()
+  warning: vi.fn(),
 }));
 
 vi.mock("vscode", () => ({
   workspace: {
     getConfiguration: () => ({
       get: (key: string, fallback: unknown) => host.settings[key] ?? fallback,
-      inspect: (key: string) => ({ globalValue: host.settings[key] })
+      inspect: (key: string) => ({ globalValue: host.settings[key] }),
     }),
     onDidChangeConfiguration: (callback: (event: unknown) => void) => {
       host.configChanged = () => callback({ affectsConfiguration: () => true });
       return { dispose() {} };
-    }
+    },
   },
   commands: {
     registerCommand: (name: string, callback: () => Promise<unknown>) => {
       host.commands.set(name, callback);
       return { dispose() {} };
-    }
+    },
   },
   window: {
     createStatusBarItem: () => host.item,
     showInformationMessage: host.info,
     showWarningMessage: host.warning,
     showInputBox: async () => "key-b",
-    showQuickPick: host.pick
+    showQuickPick: host.pick,
   },
   StatusBarAlignment: { Left: 1, Right: 2 },
   QuickPickItemKind: { Separator: -1 },
-  ThemeColor: class { constructor(public id: string) {} },
+  ThemeColor: class {
+    constructor(public id: string) {}
+  },
   MarkdownString: class {
     constructor(public value = "") {}
-    appendText(text: string) { this.value += text; return this; }
-    appendMarkdown(text: string) { this.value += text; return this; }
-  }
+    appendText(text: string) {
+      this.value += text;
+      return this;
+    }
+    appendMarkdown(text: string) {
+      this.value += text;
+      return this;
+    }
+  },
 }));
 
 import { activate, deactivate } from "../extension";
@@ -53,14 +66,28 @@ import { activate, deactivate } from "../extension";
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (error: Error) => void;
-  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
   return { promise, resolve, reject };
 }
 
-const usage = (used: number) => new Response(JSON.stringify({
-  mode: "quota_limited", status: "active", isValid: true, rate_limits: [{ window: "7d", limit: 100, used }]
-}), { status: 200 });
-const flush = async () => { for (let i = 0; i < 20; i++) { await Promise.resolve(); } };
+const usage = (used: number) =>
+  new Response(
+    JSON.stringify({
+      mode: "quota_limited",
+      status: "active",
+      isValid: true,
+      rate_limits: [{ window: "7d", limit: 100, used }],
+    }),
+    { status: 200 },
+  );
+const flush = async () => {
+  for (let i = 0; i < 20; i++) {
+    await Promise.resolve();
+  }
+};
 const command = (name: string) => host.commands.get(`sub2apiUsage.${name}`)!();
 
 beforeEach(() => {
@@ -85,19 +112,25 @@ beforeEach(() => {
       onDidChange: (callback: typeof host.secretChanged) => {
         host.secretChanged = callback;
         return { dispose() {} };
-      }
-    }
+      },
+    },
   } as unknown as vscode.ExtensionContext;
   activate(context);
 });
 
-afterEach(() => { deactivate(); vi.unstubAllGlobals(); });
+afterEach(() => {
+  deactivate();
+  vi.unstubAllGlobals();
+});
 
 describe("refresh lifecycle", () => {
   it("cancels old endpoint requests and keeps the new request deduplicated", async () => {
     const old = deferred<Response>();
     const current = deferred<Response>();
-    const fetchMock = vi.fn().mockReturnValueOnce(old.promise).mockReturnValueOnce(current.promise);
+    const fetchMock = vi
+      .fn()
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(current.promise);
     vi.stubGlobal("fetch", fetchMock);
     const first = command("refresh");
     await flush();
@@ -116,7 +149,9 @@ describe("refresh lifecycle", () => {
     current.resolve(usage(70));
     await Promise.all([second, third]);
     expect(host.item.text).toContain("70.00%");
-    expect(host.info).not.toHaveBeenCalledWith(expect.stringContaining("cancelled"));
+    expect(host.info).not.toHaveBeenCalledWith(
+      expect.stringContaining("cancelled"),
+    );
   });
 
   it("does not send an old key to a new endpoint while SecretStorage is pending", async () => {
@@ -133,28 +168,39 @@ describe("refresh lifecycle", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it.each(["setApiKey", "clearApiKey"])("isolates an in-flight request when running %s", async (name) => {
-    const old = deferred<Response>();
-    const fetchMock = vi.fn().mockReturnValueOnce(old.promise).mockImplementation(async () => usage(60));
-    vi.stubGlobal("fetch", fetchMock);
-    const first = command("refresh");
-    await flush();
-    await command(name);
-    const expected = host.item.text;
-    old.resolve(usage(20));
-    await first;
-    expect(host.item.text).toBe(expected);
-    if (name === "setApiKey") {
-      expect(expected).toContain("60.00%");
-      expect(fetchMock.mock.calls[1][1].headers.authorization).toBe("Bearer key-b");
-    } else {
-      expect(expected).toContain("Set token");
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    }
-  });
+  it.each(["setApiKey", "clearApiKey"])(
+    "isolates an in-flight request when running %s",
+    async (name) => {
+      const old = deferred<Response>();
+      const fetchMock = vi
+        .fn()
+        .mockReturnValueOnce(old.promise)
+        .mockImplementation(async () => usage(60));
+      vi.stubGlobal("fetch", fetchMock);
+      const first = command("refresh");
+      await flush();
+      await command(name);
+      const expected = host.item.text;
+      old.resolve(usage(20));
+      await first;
+      expect(host.item.text).toBe(expected);
+      if (name === "setApiKey") {
+        expect(expected).toContain("60.00%");
+        expect(fetchMock.mock.calls[1][1].headers.authorization).toBe(
+          "Bearer key-b",
+        );
+      } else {
+        expect(expected).toContain("Set token");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      }
+    },
+  );
 
   it("marks cached data stale in the status bar and details and recovers", async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(usage(20)).mockRejectedValueOnce(new Error("offline"))
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(usage(20))
+      .mockRejectedValueOnce(new Error("offline"))
       .mockResolvedValueOnce(usage(30));
     vi.stubGlobal("fetch", fetchMock);
     await command("refresh");
@@ -176,8 +222,70 @@ describe("refresh lifecycle", () => {
     expect(host.item.text).not.toContain("stale");
   });
 
+  it("updates model visibility from settings without refetching or changing overall usage", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            mode: "quota_limited",
+            status: "active",
+            isValid: true,
+            usage: { total: { requests: 10, actual_cost: 7 } },
+            model_stats: [
+              {
+                model: "gpt-6-astra",
+                requests: 4,
+                actual_cost: 3,
+                total_tokens: 400,
+              },
+              {
+                model: "gpt-6-sol",
+                requests: 6,
+                actual_cost: 4,
+                total_tokens: 600,
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await command("refresh");
+    expect((host.item.tooltip as { value: string }).value).toContain(
+      "gpt-6-astra:",
+    );
+
+    host.settings.visibleModels = [" gpt-6-sol ", "", "gpt-6-sol"];
+    host.configChanged!();
+    const tooltip = (host.item.tooltip as { value: string }).value;
+    expect(tooltip).toContain(
+      "gpt-6-sol: requests 6 / cost $4.00 / tokens 600",
+    );
+    expect(tooltip).not.toContain("gpt-6-astra:");
+    await command("showDetails");
+    const labels = host.pick.mock.calls[0][0].map(
+      (item: vscode.QuickPickItem) => item.label,
+    );
+    expect(labels).toContain("gpt-6-sol: requests 6 / cost $4.00");
+    expect(
+      labels.some((label: string) => label.startsWith("gpt-6-astra:")),
+    ).toBe(false);
+    expect(labels).toContain("Total: requests 10 / cost $7.00");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    host.settings.visibleModels = [];
+    host.configChanged!();
+    expect((host.item.tooltip as { value: string }).value).toContain(
+      "gpt-6-astra:",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("clears cached data when endpoint changes with polling disabled", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => usage(20)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => usage(20)),
+    );
     await command("refresh");
     host.settings.endpoint = "https://b.example/v1/usage";
     host.configChanged!();
@@ -188,7 +296,10 @@ describe("refresh lifecycle", () => {
   });
 
   it("invalidates cached data on external secret changes", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => usage(20)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => usage(20)),
+    );
     await command("refresh");
     host.key = undefined;
     host.secretChanged!({ key: "sub2apiUsage.apiKey" });
@@ -198,7 +309,10 @@ describe("refresh lifecycle", () => {
 
   it("does not update disposed UI when a pending request finishes", async () => {
     const pending = deferred<Response>();
-    vi.stubGlobal("fetch", vi.fn(() => pending.promise));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => pending.promise),
+    );
     const first = command("refresh");
     await flush();
     deactivate();

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.2
+
+- Added `sub2apiUsage.visibleModels` to show only selected models in historical usage details, tooltips, and copied summaries. Model names match exactly and are case-sensitive; surrounding spaces are ignored. An empty list shows all models, and unmatched lists show `N/A`.
+- Configure the model list directly in the Settings editor using Add Item, or in `settings.json`.
+- Apply model visibility changes to cached data without an additional API request. Overall today/total usage and quota values remain unchanged.
+
 ## 0.4.1
 
 - Fixed total-quota-only API keys showing placeholder text: preserve and validate `quota`, and show total percentage, used/limit, or remaining according to the display mode when no rate-limit windows are returned.

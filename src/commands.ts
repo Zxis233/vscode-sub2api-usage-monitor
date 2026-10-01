@@ -5,12 +5,14 @@ import {
   formatMoney,
   formatPlainSummary,
   getAvailableRateLimits,
-  getRemaining
+  getRemaining,
+  getVisibleModelStats,
 } from "./formatter";
 import type { RateLimit, RateLimitWindow, UsageResponse } from "./types";
 import { getErrorMessage } from "./utils";
 
-export type RefreshResult = "success" | "error" | "missingEndpoint" | "missingApiKey" | "cancelled";
+export type RefreshResult =
+  "success" | "error" | "missingEndpoint" | "missingApiKey" | "cancelled";
 
 export interface CommandDependencies {
   refresh: () => Promise<RefreshResult>;
@@ -28,7 +30,7 @@ interface ActionQuickPickItem extends vscode.QuickPickItem {
 
 export function registerCommands(
   _context: vscode.ExtensionContext,
-  dependencies: CommandDependencies
+  dependencies: CommandDependencies,
 ): vscode.Disposable[] {
   return [
     vscode.commands.registerCommand("sub2apiUsage.refresh", async () => {
@@ -36,11 +38,15 @@ export function registerCommands(
       if (result === "success") {
         vscode.window.showInformationMessage("Sub2api usage refreshed.");
       } else if (result === "missingEndpoint") {
-        vscode.window.showWarningMessage("Sub2api usage endpoint is not configured.");
+        vscode.window.showWarningMessage(
+          "Sub2api usage endpoint is not configured.",
+        );
       } else if (result === "missingApiKey") {
         vscode.window.showWarningMessage("Sub2api API key is not configured.");
       } else if (result === "error") {
-        vscode.window.showWarningMessage(`Sub2api usage refresh failed: ${getErrorMessage(dependencies.getLastError())}`);
+        vscode.window.showWarningMessage(
+          `Sub2api usage refresh failed: ${getErrorMessage(dependencies.getLastError())}`,
+        );
       }
     }),
     vscode.commands.registerCommand("sub2apiUsage.setApiKey", async () => {
@@ -49,7 +55,7 @@ export function registerCommands(
         prompt: "Enter the Bearer Token for the usage API.",
         password: true,
         ignoreFocusOut: true,
-        placeHolder: "sk-..."
+        placeHolder: "sk-...",
       });
 
       if (apiKey === undefined) {
@@ -58,23 +64,29 @@ export function registerCommands(
 
       const trimmed = apiKey.trim();
       if (!trimmed) {
-        vscode.window.showWarningMessage("API key was empty. Nothing was saved.");
+        vscode.window.showWarningMessage(
+          "API key was empty. Nothing was saved.",
+        );
         return;
       }
 
       await dependencies.setApiKey(trimmed);
-      vscode.window.showInformationMessage("Sub2api API key saved to VS Code SecretStorage.");
+      vscode.window.showInformationMessage(
+        "Sub2api API key saved to VS Code SecretStorage.",
+      );
     }),
     vscode.commands.registerCommand("sub2apiUsage.clearApiKey", async () => {
       await dependencies.setApiKey(undefined);
-      vscode.window.showInformationMessage("Sub2api API key removed from VS Code SecretStorage.");
+      vscode.window.showInformationMessage(
+        "Sub2api API key removed from VS Code SecretStorage.",
+      );
     }),
     vscode.commands.registerCommand("sub2apiUsage.showDetails", async () => {
       await showDetails(dependencies);
     }),
     vscode.commands.registerCommand("sub2apiUsage.openSettings", async () => {
       await openSettings();
-    })
+    }),
   ];
 }
 
@@ -82,13 +94,21 @@ async function showDetails(dependencies: CommandDependencies): Promise<void> {
   if (!dependencies.getConfig().endpoint) {
     const selected = await vscode.window.showQuickPick<ActionQuickPickItem>(
       [
-        { label: "$(gear) Open Settings", description: "Configure sub2apiUsage.endpoint", action: "settings" },
-        { label: "$(key) Set API Key", description: "Store token in SecretStorage", action: "setApiKey" }
+        {
+          label: "$(gear) Open Settings",
+          description: "Configure sub2apiUsage.endpoint",
+          action: "settings",
+        },
+        {
+          label: "$(key) Set API Key",
+          description: "Store token in SecretStorage",
+          action: "setApiKey",
+        },
       ],
       {
         title: "Sub2api Usage Monitor",
-        placeHolder: "Usage endpoint is not configured."
-      }
+        placeHolder: "Usage endpoint is not configured.",
+      },
     );
 
     await handleAction(selected, dependencies);
@@ -99,13 +119,21 @@ async function showDetails(dependencies: CommandDependencies): Promise<void> {
   if (!apiKey) {
     const selected = await vscode.window.showQuickPick<ActionQuickPickItem>(
       [
-        { label: "$(key) Set API Key", description: "Store token in SecretStorage", action: "setApiKey" },
-        { label: "$(gear) Open Settings", description: "Configure sub2apiUsage settings", action: "settings" }
+        {
+          label: "$(key) Set API Key",
+          description: "Store token in SecretStorage",
+          action: "setApiKey",
+        },
+        {
+          label: "$(gear) Open Settings",
+          description: "Configure sub2apiUsage settings",
+          action: "settings",
+        },
       ],
       {
         title: "Sub2api Usage Monitor",
-        placeHolder: "API key is not configured."
-      }
+        placeHolder: "API key is not configured.",
+      },
     );
 
     await handleAction(selected, dependencies);
@@ -118,15 +146,19 @@ async function showDetails(dependencies: CommandDependencies): Promise<void> {
     const selected = await vscode.window.showQuickPick<ActionQuickPickItem>(
       [
         {
-          label: error ? "$(warning) Last refresh failed" : "$(info) No usage data loaded",
-          description: error ? getErrorMessage(error) : "Run a refresh to load usage data."
+          label: error
+            ? "$(warning) Last refresh failed"
+            : "$(info) No usage data loaded",
+          description: error
+            ? getErrorMessage(error)
+            : "Run a refresh to load usage data.",
         },
         { label: "$(sync) Refresh now", action: "refresh" },
-        { label: "$(gear) Open Settings", action: "settings" }
+        { label: "$(gear) Open Settings", action: "settings" },
       ],
       {
-        title: "Sub2api Usage Monitor"
-      }
+        title: "Sub2api Usage Monitor",
+      },
     );
 
     await handleAction(selected, dependencies);
@@ -136,24 +168,44 @@ async function showDetails(dependencies: CommandDependencies): Promise<void> {
   const error = dependencies.getLastError();
   const lastSuccessAt = dependencies.getLastSuccessAt();
   const freshness = [
-    ...(error ? [{ label: "$(warning) Cached data — last refresh failed", description: getErrorMessage(error) }] : []),
-    { label: `Last successful refresh: ${lastSuccessAt?.toLocaleString() ?? "N/A"}` }
+    ...(error
+      ? [
+          {
+            label: "$(warning) Cached data — last refresh failed",
+            description: getErrorMessage(error),
+          },
+        ]
+      : []),
+    {
+      label: `Last successful refresh: ${lastSuccessAt?.toLocaleString() ?? "N/A"}`,
+    },
   ];
-  const selected = await vscode.window.showQuickPick<ActionQuickPickItem>([...freshness, ...buildDetailsItems(response, dependencies.getConfig())], {
-    title: "Sub2api Usage Monitor",
-    matchOnDescription: true,
-    matchOnDetail: true
-  });
+  const selected = await vscode.window.showQuickPick<ActionQuickPickItem>(
+    [...freshness, ...buildDetailsItems(response, dependencies.getConfig())],
+    {
+      title: "Sub2api Usage Monitor",
+      matchOnDescription: true,
+      matchOnDetail: true,
+    },
+  );
 
   // A picker can remain open across an endpoint/key change or another refresh.
-  if (selected?.action === "copySummary" && response !== dependencies.getLastResponse()) {
-    vscode.window.showWarningMessage("Usage data changed. Reopen details to copy the current summary.");
+  if (
+    selected?.action === "copySummary" &&
+    response !== dependencies.getLastResponse()
+  ) {
+    vscode.window.showWarningMessage(
+      "Usage data changed. Reopen details to copy the current summary.",
+    );
     return;
   }
   await handleAction(selected, dependencies, response);
 }
 
-function buildDetailsItems(response: UsageResponse, config: ExtensionConfig): ActionQuickPickItem[] {
+function buildDetailsItems(
+  response: UsageResponse,
+  config: ExtensionConfig,
+): ActionQuickPickItem[] {
   const rateLimits = getAvailableRateLimits(response);
   const items: ActionQuickPickItem[] = [
     { label: "Account", kind: vscode.QuickPickItemKind.Separator },
@@ -161,54 +213,67 @@ function buildDetailsItems(response: UsageResponse, config: ExtensionConfig): Ac
     { label: `Mode: ${response.mode ?? "N/A"}` },
     { label: `Expires: ${response.expires_at ?? "N/A"}` },
     { label: `Days Until Expiry: ${response.days_until_expiry ?? "N/A"}` },
-    { label: `RPM / TPM: ${response.usage?.rpm ?? "N/A"} / ${response.usage?.tpm ?? "N/A"}` },
+    {
+      label: `RPM / TPM: ${response.usage?.rpm ?? "N/A"} / ${response.usage?.tpm ?? "N/A"}`,
+    },
     { label: "Rate Limits", kind: vscode.QuickPickItemKind.Separator },
     ...(response.quota ? [{ label: formatTotalQuota(response, config) }] : []),
     ...(rateLimits.length > 0
-      ? rateLimits.map((rateLimit) => buildRateLimitItem(rateLimit.window, rateLimit, config))
-      : (response.quota ? [] : [{ label: "No rate limit data available." }])),
+      ? rateLimits.map((rateLimit) =>
+          buildRateLimitItem(rateLimit.window, rateLimit, config),
+        )
+      : response.quota
+        ? []
+        : [{ label: "No rate limit data available." }]),
     { label: "Usage", kind: vscode.QuickPickItemKind.Separator },
     {
-      label: `Today: requests ${response.usage?.today?.requests ?? "N/A"} / cost ${formatMoney(response.usage?.today?.actual_cost ?? response.usage?.today?.cost, config)}`
+      label: `Today: requests ${response.usage?.today?.requests ?? "N/A"} / cost ${formatMoney(response.usage?.today?.actual_cost ?? response.usage?.today?.cost, config)}`,
     },
     {
-      label: `Total: requests ${response.usage?.total?.requests ?? "N/A"} / cost ${formatMoney(response.usage?.total?.actual_cost ?? response.usage?.total?.cost, config)}`
+      label: `Total: requests ${response.usage?.total?.requests ?? "N/A"} / cost ${formatMoney(response.usage?.total?.actual_cost ?? response.usage?.total?.cost, config)}`,
     },
     { label: "Models", kind: vscode.QuickPickItemKind.Separator },
     ...buildModelItems(response, config),
     { label: "Actions", kind: vscode.QuickPickItemKind.Separator },
     { label: "$(sync) Refresh now", action: "refresh" },
     { label: "$(gear) Open Settings", action: "settings" },
-    { label: "$(copy) Copy summary", action: "copySummary" }
+    { label: "$(copy) Copy summary", action: "copySummary" },
   ];
 
   return items;
 }
 
-function buildRateLimitItem(window: RateLimitWindow, rateLimit: RateLimit, config: ExtensionConfig): ActionQuickPickItem {
+function buildRateLimitItem(
+  window: RateLimitWindow,
+  rateLimit: RateLimit,
+  config: ExtensionConfig,
+): ActionQuickPickItem {
   return {
     label: `${window}: used ${formatMoney(rateLimit.used, config)} / limit ${formatMoney(rateLimit.limit, config)} / remaining ${formatMoney(getRemaining(rateLimit), config)}`,
     description: `reset ${rateLimit.reset_at ?? "N/A"}`,
-    detail: `raw remaining ${formatMoney(rateLimit.remaining, config)} / window start ${rateLimit.window_start ?? "N/A"}`
+    detail: `raw remaining ${formatMoney(rateLimit.remaining, config)} / window start ${rateLimit.window_start ?? "N/A"}`,
   };
 }
 
-function buildModelItems(response: UsageResponse, config: ExtensionConfig): ActionQuickPickItem[] {
-  const models = response.model_stats ?? [];
+function buildModelItems(
+  response: UsageResponse,
+  config: ExtensionConfig,
+): ActionQuickPickItem[] {
+  const models = getVisibleModelStats(response, config);
   if (models.length === 0) {
     return [{ label: "N/A" }];
   }
 
   return models.map((model) => ({
     label: `${model.model ?? "N/A"}: requests ${model.requests ?? "N/A"} / cost ${formatMoney(model.actual_cost ?? model.cost, config)}`,
-    description: `tokens ${model.total_tokens ?? "N/A"}`
+    description: `tokens ${model.total_tokens ?? "N/A"}`,
   }));
 }
 
 async function handleAction(
   selected: ActionQuickPickItem | undefined,
   dependencies: CommandDependencies,
-  response?: UsageResponse
+  response?: UsageResponse,
 ): Promise<void> {
   switch (selected?.action) {
     case "setApiKey":
@@ -225,9 +290,11 @@ async function handleAction(
       if (data) {
         const error = dependencies.getLastError();
         const summary = [
-          ...(error ? [`Cached data — last refresh failed: ${getErrorMessage(error)}`] : []),
+          ...(error
+            ? [`Cached data — last refresh failed: ${getErrorMessage(error)}`]
+            : []),
           `Last successful refresh: ${dependencies.getLastSuccessAt()?.toLocaleString() ?? "N/A"}`,
-          formatPlainSummary(data, dependencies.getConfig())
+          formatPlainSummary(data, dependencies.getConfig()),
         ].join("\n");
         await vscode.env.clipboard.writeText(summary);
         vscode.window.showInformationMessage("Sub2api usage summary copied.");
@@ -238,5 +305,8 @@ async function handleAction(
 }
 
 async function openSettings(): Promise<void> {
-  await vscode.commands.executeCommand("workbench.action.openSettings", "sub2apiUsage");
+  await vscode.commands.executeCommand(
+    "workbench.action.openSettings",
+    "sub2apiUsage",
+  );
 }

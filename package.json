@@ -2,7 +2,7 @@
   "name": "sub2api-usage-monitor",
   "displayName": "Sub2api Usage Monitor",
   "description": "Show Sub2api relay API usage and quota information in the VS Code status bar.",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "publisher": "Esing",
   "author": "Esing",
   "license": "MIT",
@@ -149,6 +149,15 @@
           "default": true,
           "order": 80,
           "description": "Show the 7d rate limit when available."
+        },
+        "sub2apiUsage.visibleModels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "order": 85,
+          "markdownDescription": "Use **Add Item** to add one model name per entry. Leave the list empty to show all models without filtering. Applies to historical usage details, tooltips, and copied summaries. Names match exactly (case-sensitive); surrounding spaces are ignored. Overall usage totals are unchanged."
         },
         "sub2apiUsage.placeholderText": {
           "type": "string",

@@ -1,5 +1,17 @@
-import type { DailyUsage, ModelStat, RateLimit, UsageCounters, UsageResponse, UsageSummary } from "./types";
-import { isRecord, toBooleanValue, toFiniteNumber, toStringValue } from "./utils";
+import type {
+  DailyUsage,
+  ModelStat,
+  RateLimit,
+  UsageCounters,
+  UsageResponse,
+  UsageSummary,
+} from "./types";
+import {
+  isRecord,
+  toBooleanValue,
+  toFiniteNumber,
+  toStringValue,
+} from "./utils";
 
 export type UsageApiErrorCode =
   | "missingEndpoint"
@@ -27,7 +39,12 @@ export class UsageApiError extends Error {
   public readonly statusCode?: number;
   public readonly responseBody?: string;
 
-  public constructor(message: string, code: UsageApiErrorCode, statusCode?: number, responseBody?: string) {
+  public constructor(
+    message: string,
+    code: UsageApiErrorCode,
+    statusCode?: number,
+    responseBody?: string,
+  ) {
     super(message);
     this.name = "UsageApiError";
     this.code = code;
@@ -53,9 +70,9 @@ export class ApiClient {
         method: "GET",
         headers: {
           accept: "application/json",
-          authorization: `Bearer ${options.apiKey}`
+          authorization: `Bearer ${options.apiKey}`,
         },
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       const body = await response.text();
@@ -68,7 +85,12 @@ export class ApiClient {
       try {
         parsed = body ? JSON.parse(body) : {};
       } catch {
-        throw new UsageApiError("Usage API returned a non-JSON response.", "invalidJson", response.status, body);
+        throw new UsageApiError(
+          "Usage API returned a non-JSON response.",
+          "invalidJson",
+          response.status,
+          body,
+        );
       }
 
       return normalizeUsageResponse(parsed);
@@ -81,10 +103,16 @@ export class ApiClient {
       }
 
       if (isAbortError(error)) {
-        throw new UsageApiError(`Usage API request timed out after ${timeoutMs}ms.`, "timeout");
+        throw new UsageApiError(
+          `Usage API request timed out after ${timeoutMs}ms.`,
+          "timeout",
+        );
       }
 
-      throw new UsageApiError(`Usage API request failed: ${error instanceof Error ? error.message : String(error)}`, "network");
+      throw new UsageApiError(
+        `Usage API request failed: ${error instanceof Error ? error.message : String(error)}`,
+        "network",
+      );
     } finally {
       clearTimeout(timeout);
       options.signal?.removeEventListener("abort", abort);
@@ -95,58 +123,102 @@ export class ApiClient {
 function parseUsageEndpoint(endpoint: string): URL {
   const trimmed = endpoint.trim();
   if (!trimmed) {
-    throw new UsageApiError("Usage API endpoint is not configured.", "missingEndpoint");
+    throw new UsageApiError(
+      "Usage API endpoint is not configured.",
+      "missingEndpoint",
+    );
   }
 
   let url: URL;
   try {
     url = new URL(trimmed);
   } catch {
-    throw new UsageApiError("Usage API endpoint must be a valid URL.", "invalidEndpoint");
+    throw new UsageApiError(
+      "Usage API endpoint must be a valid URL.",
+      "invalidEndpoint",
+    );
   }
 
-  if (url.protocol === "https:" || (url.protocol === "http:" && isLoopbackHost(url.hostname))) {
+  if (
+    url.protocol === "https:" ||
+    (url.protocol === "http:" && isLoopbackHost(url.hostname))
+  ) {
     return url;
   }
 
-  throw new UsageApiError("Usage API endpoint must use HTTPS, except for localhost testing.", "invalidEndpoint");
+  throw new UsageApiError(
+    "Usage API endpoint must use HTTPS, except for localhost testing.",
+    "invalidEndpoint",
+  );
 }
 
 function isLoopbackHost(hostname: string): boolean {
   const normalized = hostname.toLowerCase();
-  return normalized === "localhost" || normalized === "127.0.0.1" || normalized === "::1" || normalized === "[::1]";
+  return (
+    normalized === "localhost" ||
+    normalized === "127.0.0.1" ||
+    normalized === "::1" ||
+    normalized === "[::1]"
+  );
 }
 
 function createHttpError(statusCode: number, body: string): UsageApiError {
   if (statusCode === 401) {
-    return new UsageApiError("Usage API returned 401 Unauthorized. Check the configured API key.", "unauthorized", statusCode, body);
+    return new UsageApiError(
+      "Usage API returned 401 Unauthorized. Check the configured API key.",
+      "unauthorized",
+      statusCode,
+      body,
+    );
   }
 
   if (statusCode === 403) {
-    return new UsageApiError("Usage API returned 403 Forbidden. The API key may not have permission.", "forbidden", statusCode, body);
+    return new UsageApiError(
+      "Usage API returned 403 Forbidden. The API key may not have permission.",
+      "forbidden",
+      statusCode,
+      body,
+    );
   }
 
   if (statusCode === 429) {
-    return new UsageApiError("Usage API returned 429 Too Many Requests. Try again later.", "rateLimited", statusCode, body);
+    return new UsageApiError(
+      "Usage API returned 429 Too Many Requests. Try again later.",
+      "rateLimited",
+      statusCode,
+      body,
+    );
   }
 
   if (statusCode >= 500) {
-    return new UsageApiError(`Usage API server error (${statusCode}).`, "server", statusCode, body);
+    return new UsageApiError(
+      `Usage API server error (${statusCode}).`,
+      "server",
+      statusCode,
+      body,
+    );
   }
 
-  return new UsageApiError(`Usage API request failed with HTTP ${statusCode}.`, "http", statusCode, body);
+  return new UsageApiError(
+    `Usage API request failed with HTTP ${statusCode}.`,
+    "http",
+    statusCode,
+    body,
+  );
 }
 
 function normalizeUsageResponse(value: unknown): UsageResponse {
   validateUsageResponse(value);
 
   return {
-    quota: isRecord(value.quota) ? {
-      limit: value.quota.limit as number,
-      used: value.quota.used as number,
-      remaining: toFiniteNumber(value.quota.remaining),
-      unit: toStringValue(value.quota.unit)
-    } : undefined,
+    quota: isRecord(value.quota)
+      ? {
+          limit: value.quota.limit as number,
+          used: value.quota.used as number,
+          remaining: toFiniteNumber(value.quota.remaining),
+          unit: toStringValue(value.quota.unit),
+        }
+      : undefined,
     daily_usage: normalizeArray(value.daily_usage, normalizeDailyUsage),
     days_until_expiry: toFiniteNumber(value.days_until_expiry),
     expires_at: toStringValue(value.expires_at),
@@ -155,66 +227,123 @@ function normalizeUsageResponse(value: unknown): UsageResponse {
     model_stats: normalizeArray(value.model_stats, normalizeModelStat),
     rate_limits: normalizeArray(value.rate_limits, normalizeRateLimit),
     status: toStringValue(value.status),
-    usage: normalizeUsageSummary(value.usage)
+    usage: normalizeUsageSummary(value.usage),
   };
 }
 
-function validateUsageResponse(value: unknown): asserts value is Record<string, unknown> {
+function validateUsageResponse(
+  value: unknown,
+): asserts value is Record<string, unknown> {
   const invalid = (field: string): never => {
     throw new UsageApiError(
       `Usage API returned an invalid Sub2api response (${field}). Check that the endpoint points to /v1/usage.`,
-      "invalidResponse"
+      "invalidResponse",
     );
   };
 
-  if (!isRecord(value)) { return invalid("root"); }
-  if (value.error !== undefined && value.error !== null) { invalid("error"); }
-  if (typeof value.isValid !== "boolean") { invalid("isValid"); }
+  if (!isRecord(value)) {
+    return invalid("root");
+  }
+  if (value.error !== undefined && value.error !== null) {
+    invalid("error");
+  }
+  if (typeof value.isValid !== "boolean") {
+    invalid("isValid");
+  }
 
   // These fields are unconditional in the corresponding gateway handler branch.
   // Quotas and statistics are conditional: failed best-effort queries can omit them.
   if (value.mode === "quota_limited") {
-    if (typeof value.status !== "string" || !value.status.trim()) { invalid("status"); }
+    if (typeof value.status !== "string" || !value.status.trim()) {
+      invalid("status");
+    }
   } else if (value.mode === "unrestricted") {
-    if (typeof value.planName !== "string") { invalid("planName"); }
-    if (typeof value.unit !== "string" || !value.unit.trim()) { invalid("unit"); }
+    if (typeof value.planName !== "string") {
+      invalid("planName");
+    }
+    if (typeof value.unit !== "string" || !value.unit.trim()) {
+      invalid("unit");
+    }
   } else {
     invalid("mode");
   }
 
   for (const field of ["daily_usage", "model_stats", "rate_limits"] as const) {
     const items = value[field];
-    if (items != null && (!Array.isArray(items) || !items.every(isRecord))) { invalid(field); }
+    if (items != null && (!Array.isArray(items) || !items.every(isRecord))) {
+      invalid(field);
+    }
   }
-  if (value.usage != null && !isRecord(value.usage)) { invalid("usage"); }
+  if (value.usage != null && !isRecord(value.usage)) {
+    invalid("usage");
+  }
   if (value.quota != null) {
     const quota = value.quota;
-    if (!isRecord(quota)) { return invalid("quota"); }
-    if (typeof quota.limit !== "number" || !Number.isFinite(quota.limit) || quota.limit <= 0) { invalid("quota.limit"); }
-    if (typeof quota.used !== "number" || !Number.isFinite(quota.used) || quota.used < 0) { invalid("quota.used"); }
-    if (quota.remaining != null && toFiniteNumber(quota.remaining) === undefined) { invalid("quota.remaining"); }
-    if (quota.unit != null && typeof quota.unit !== "string") { invalid("quota.unit"); }
+    if (!isRecord(quota)) {
+      return invalid("quota");
+    }
+    if (
+      typeof quota.limit !== "number" ||
+      !Number.isFinite(quota.limit) ||
+      quota.limit <= 0
+    ) {
+      invalid("quota.limit");
+    }
+    if (
+      typeof quota.used !== "number" ||
+      !Number.isFinite(quota.used) ||
+      quota.used < 0
+    ) {
+      invalid("quota.used");
+    }
+    if (
+      quota.remaining != null &&
+      toFiniteNumber(quota.remaining) === undefined
+    ) {
+      invalid("quota.remaining");
+    }
+    if (quota.unit != null && typeof quota.unit !== "string") {
+      invalid("quota.unit");
+    }
   }
 
   if (Array.isArray(value.rate_limits)) {
     const windows = new Set<string>();
     for (const item of value.rate_limits) {
       // Keep new window names forward-compatible, but never silently render broken quota data.
-      if (typeof item.window !== "string" || !item.window.trim() || windows.has(item.window)) {
+      if (
+        typeof item.window !== "string" ||
+        !item.window.trim() ||
+        windows.has(item.window)
+      ) {
         invalid("rate_limits.window");
       }
       windows.add(item.window);
-      if (toFiniteNumber(item.limit) === undefined || item.limit <= 0) { invalid("rate_limits.limit"); }
-      if (toFiniteNumber(item.used) === undefined || item.used < 0) { invalid("rate_limits.used"); }
-      if (item.remaining != null && toFiniteNumber(item.remaining) === undefined) { invalid("rate_limits.remaining"); }
+      if (toFiniteNumber(item.limit) === undefined || item.limit <= 0) {
+        invalid("rate_limits.limit");
+      }
+      if (toFiniteNumber(item.used) === undefined || item.used < 0) {
+        invalid("rate_limits.used");
+      }
+      if (
+        item.remaining != null &&
+        toFiniteNumber(item.remaining) === undefined
+      ) {
+        invalid("rate_limits.remaining");
+      }
       for (const field of ["window_start", "reset_at"] as const) {
-        if (item[field] != null && typeof item[field] !== "string") { invalid(`rate_limits.${field}`); }
+        if (item[field] != null && typeof item[field] !== "string") {
+          invalid(`rate_limits.${field}`);
+        }
       }
     }
   }
 }
 
-function normalizeArray<T>(value: unknown, mapper: (item: Record<string, unknown>) => T): T[] | undefined {
+function normalizeArray<T>(
+  value: unknown,
+  mapper: (item: Record<string, unknown>) => T,
+): T[] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
   }
@@ -233,7 +362,7 @@ function normalizeDailyUsage(value: Record<string, unknown>): DailyUsage {
     cache_creation_tokens: toFiniteNumber(value.cache_creation_tokens),
     total_tokens: toFiniteNumber(value.total_tokens),
     cost: toFiniteNumber(value.cost),
-    actual_cost: toFiniteNumber(value.actual_cost)
+    actual_cost: toFiniteNumber(value.actual_cost),
   };
 }
 
@@ -248,7 +377,7 @@ function normalizeModelStat(value: Record<string, unknown>): ModelStat {
     total_tokens: toFiniteNumber(value.total_tokens),
     cost: toFiniteNumber(value.cost),
     actual_cost: toFiniteNumber(value.actual_cost),
-    account_cost: toFiniteNumber(value.account_cost)
+    account_cost: toFiniteNumber(value.account_cost),
   };
 }
 
@@ -259,7 +388,7 @@ function normalizeRateLimit(value: Record<string, unknown>): RateLimit {
     reset_at: toStringValue(value.reset_at),
     used: toFiniteNumber(value.used),
     window: toStringValue(value.window),
-    window_start: toStringValue(value.window_start)
+    window_start: toStringValue(value.window_start),
   };
 }
 
@@ -273,7 +402,7 @@ function normalizeUsageSummary(value: unknown): UsageSummary | undefined {
     rpm: toFiniteNumber(value.rpm),
     today: normalizeUsageCounters(value.today),
     total: normalizeUsageCounters(value.total),
-    tpm: toFiniteNumber(value.tpm)
+    tpm: toFiniteNumber(value.tpm),
   };
 }
 
@@ -290,7 +419,7 @@ function normalizeUsageCounters(value: unknown): UsageCounters | undefined {
     input_tokens: toFiniteNumber(value.input_tokens),
     output_tokens: toFiniteNumber(value.output_tokens),
     requests: toFiniteNumber(value.requests),
-    total_tokens: toFiniteNumber(value.total_tokens)
+    total_tokens: toFiniteNumber(value.total_tokens),
   };
 }
 

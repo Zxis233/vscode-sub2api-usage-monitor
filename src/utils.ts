@@ -15,7 +15,9 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function toFiniteNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 export function toStringValue(value: unknown): string | undefined {
@@ -34,7 +36,10 @@ export function clampNumber(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-export function formatFixedNumber(value: number | undefined, decimals: number): string {
+export function formatFixedNumber(
+  value: number | undefined,
+  decimals: number,
+): string {
   if (value === undefined || !Number.isFinite(value)) {
     return "N/A";
   }
